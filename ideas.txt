@@ -1,0 +1,19 @@
+
+try to do the following in windowCloser:
+
+    import win32gui
+    window = win32gui.GetForegroundWindow()
+    print (window)
+
+if the result can get us a path of some kind, we should send a CTRL+W when an offending folder's path is included in the active window
+
+similarly, try to use a similar function to get the pid of active exe running and send ALT+F4
+
+once either of these happen open a picture using irfanview that says "nice try, now get back to work."
+
+
+
+create a GUI that will allow me to find folders from a dropdown, if the folder is set to "exe" check it against executables, if its not, check against open folders, a schedule as well as a timer and snooze feature.
+
+
+
