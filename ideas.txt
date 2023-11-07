@@ -17,3 +17,14 @@ create a GUI that will allow me to find folders from a dropdown, if the folder i
 
 
 
+types of pKill
+    1. game/irfanview/vlc
+            if either Processpath or Title include blockList, send psutil/kill to pid
+    2. Folder 
+            (figure out how to get path of folder)
+            send CTRL + W
+types of alerts
+    1. timout ending
+        Break is over in 5 minutes please save your progress and get back to work
+    2. no timeout
+        Get back to work (immediate pkill)

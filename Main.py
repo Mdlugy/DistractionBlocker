@@ -1,3 +1,8 @@
-import win32gui
-window = win32gui.GetForegroundWindow()
-print: window
+import sys
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parent
+sys.path.append(str(project_root))
+
+from ruleFollowers.windowCloser import windowCloser
+windowCloser()
