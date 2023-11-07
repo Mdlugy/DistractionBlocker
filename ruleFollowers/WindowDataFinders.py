@@ -34,7 +34,8 @@ def get_explorer_path(hwnd):
     addr_bar_hwnd = windll_32.FindWindowExW(addr_bar_hwnd, None, 'Breadcrumb Parent', None)
     addr_bar_hwnd = windll_32.FindWindowExW(addr_bar_hwnd, None, 'ToolbarWindow32', None)
     if addr_bar_hwnd:
-        return addr_bar_hwnd
+        return getTextFromWindow(addr_bar_hwnd)
     return None    
+
 def getHwnd():
     return windll_32.GetForegroundWindow()
