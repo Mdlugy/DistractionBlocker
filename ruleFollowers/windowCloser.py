@@ -9,49 +9,12 @@ import win32gui
 import win32com
 from .createMessage import warningMessage
 from .exeBlocker import kill
-import json
-import os
 from .WindowDataFinders import getTextFromWindow, getForegroundWindowPid, getForegroudWindowPath, getForegroundWindowTitle, get_explorer_path, getHwnd
-def ReadBlackList():
-    file_path = os.path.join("jsonFiles", 'blackList.json')
-    absolute_file_path = os.path.abspath(file_path)
+from .JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak
 
-    if not os.path.exists(absolute_file_path):
-        return None
-    else:
-        with open(absolute_file_path, 'r') as file:
-            return json.load(file)
-def ReadSchedule():
-    file_path = os.path.join("jsonFiles", 'scheduler.json')
-    absolute_file_path = os.path.abspath(file_path)
-    
-    if not os.path.exists(absolute_file_path):
-        return None
-    else:
-        with open(absolute_file_path, 'r') as file:
-            return json.load(file)
-        
-def removeBreak(schedule):
-    # set schedule[break] to 0 and write to file
-    schedule["break"] = 0
-    file_path = os.path.join("jsonFiles", 'scheduler.json')
-    absolute_file_path = os.path.abspath(file_path)
-    with open(absolute_file_path, 'w') as file:
-        json.dump(schedule, file)
-    return
-def removeDayOff(schedule):
-    # set schedule[break] to 0 and write to file
-    today = datetime.now().strftime("%m:%d:%y")
-    schedule["DaysOff"].remove(today)
-    file_path = os.path.join("jsonFiles", 'scheduler.json')
-    absolute_file_path = os.path.abspath(file_path)
-    with open(absolute_file_path, 'w') as file:
-        json.dump(schedule, file)
-    return
 
-def StopRun(exitTime):
-    now = datetime.now().strftime("%H:%M:%S")
-    
+
+   
 def warnKill(KillTime, killType, hwnd, pid = None):
         warningMessage(KillTime, killType, hwnd)
         time.sleep(KillTime-5)
@@ -62,14 +25,11 @@ def warnKill(KillTime, killType, hwnd, pid = None):
 # def justwarn(KillTime, killType, hwnd, pid = None):
 #     warningMessage(KillTime, killType)
 
-def isBreak():
-    Schedule = ReadSchedule()
-    breakLeft = Schedule["Break"]
-    return breakLeft!=0
+
     
 def windowCloser():
     Schedule = ReadSchedule()
-    breakLeft = Schedule["Break"]
+    breakLeft = Schedule["break"]
     fiveMinuteWarning = False
     breakOverrideTime = None
     if not breakLeft==0:
@@ -82,7 +42,11 @@ def windowCloser():
         removeBreak(Schedule)
     timefromepoch = time.time()
     BlackList = ReadBlackList()
-        
+    specialCases = BlackList["SpecialCases"].keys()
+    # for each special case convert it to a regular string, turning special characters into their ascii values
+    for specialCase in specialCases:
+        specialCase = specialCase.encode('ascii', 'backslashreplace').decode('ascii')
+    print(specialCases)
 
     today = datetime.now().strftime("%m:%d:%y")
     print(today)

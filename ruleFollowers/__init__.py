@@ -1,1 +1,1 @@
-__all__ = ["blacklister", "exeBlocker","scheduler","windowCloser"]
+__all__ = ["blacklister", "exeBlocker","scheduler","windowCloser","JsonManipulators"]
