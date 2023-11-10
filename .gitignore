@@ -1,3 +1,6 @@
-jsonFiles/
-jsonFiles/blackList.json
-jsonFiles/PDFs.json
+# Ignore everything in the jsonFiles directory
+/JsonFiles/*
+
+# But don't ignore scheduler.json
+!/JsonFiles/scheduler.json
+!JsonFiles/blackList.json
