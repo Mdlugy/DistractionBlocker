@@ -12,10 +12,18 @@ def ReadJSON(fileName):
             return json.load(file)
 def writeJson(fileName, data):
     file_path = os.path.join("jsonFiles", fileName)
-    absolute_file_path = os.path.abspath(file_path)
-    with open(absolute_file_path, 'w') as file:
+    absolute_file_path = os.path.abspath(file_path) 
+    with open(file_path, 'w') as file:
         json.dump(data, file)
     return
+
+def write_json(fileName, data):
+    # Define the directory where the JSON file will be saved
+    # Construct the full file path
+    file_path = os.path.join(directory, fileName)
+    
+    # Write the JSON data to the file
+
 def ReadPDFs():
     return ReadJSON('PDFs.json')
 def ReadBlackList():

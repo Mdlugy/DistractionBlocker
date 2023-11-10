@@ -10,7 +10,7 @@ import win32com
 from .createMessage import warningMessage
 from .exeBlocker import kill
 from .WindowDataFinders import getTextFromWindow, getForegroundWindowPid, getForegroudWindowPath, getForegroundWindowTitle, get_explorer_path, getHwnd
-from .JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak
+from utils.JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak
 
 
 
