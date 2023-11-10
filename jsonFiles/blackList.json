@@ -1,1 +1,12 @@
-{}
+{"paths": ["I:\\"], "titles": ["Games (I:)"], "FolderPaths": ["I:\\"], 
+"SpecialCases":[
+{
+    "case":".pdf — Mozilla Firefox",
+    "BlackListpath":["PDFs.json"],
+    "killType":"window"
+},
+{
+    "case":"- IrfanView",
+    "BlackListpath":["blackList.json","FolderPaths"],
+    "killType":"exe"
+}]}
