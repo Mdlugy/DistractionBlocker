@@ -12,9 +12,6 @@ from .exeBlocker import kill
 from .WindowDataFinders import getTextFromWindow, getForegroundWindowPid, getForegroudWindowPath, getForegroundWindowTitle, get_explorer_path, getHwnd
 from utils.JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak
 
-
-
-   
 def warnKill(KillTime, killType, hwnd, pid = None):
         warningMessage(KillTime, killType, hwnd)
         time.sleep(KillTime-5)
@@ -22,11 +19,15 @@ def warnKill(KillTime, killType, hwnd, pid = None):
             return
         kill(killType, hwnd, pid)
         
-# def justwarn(KillTime, killType, hwnd, pid = None):
-#     warningMessage(KillTime, killType)
-
-
-    
+def ExeChecker(paths, path):
+        for pathStart in paths:
+            if path.startswith(pathStart):
+                return True
+def windowChecker(titles, title):
+        for BlackListedTitle in titles:
+            if BlackListedTitle in title:
+                return True
+            
 def windowCloser():
     Schedule = ReadSchedule()
     breakLeft = Schedule["break"]
@@ -43,6 +44,10 @@ def windowCloser():
     timefromepoch = time.time()
     BlackList = ReadBlackList()
     specialCases = BlackList["SpecialCases"].keys()
+    
+    
+    
+    
     # for each special case convert it to a regular string, turning special characters into their ascii values
     for specialCase in specialCases:
         specialCase = specialCase.encode('ascii', 'backslashreplace').decode('ascii')
@@ -75,7 +80,7 @@ def windowCloser():
         tomorrow = (datetime.today() + timedelta(days=1)).strftime('%A')
         # sleep until the start time of tomorrow
         time.sleep((datetime.strptime(Schedule[tomorrow]["start"], "%H:%M:%S") - datetime.strptime(now, "%H:%M:%S")).total_seconds()+86400)
-        
+    
     while True:
         hwnd = getHwnd()
         title = getForegroundWindowTitle()
@@ -91,6 +96,11 @@ def windowCloser():
             # if not explorerPath:
             #     break
 
+            
+            
+            
+            
+            
             for FolderPath in BlackList["FolderPaths"]:
                 if explorerPath and FolderPath in explorerPath:
             #         # this is the only scenario where we use kill("window")
