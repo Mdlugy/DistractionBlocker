@@ -1,3 +1,4 @@
+from pywinauto.application import Application
 from utils.windll32 import windll_32
 from ctypes import wintypes, windll, create_unicode_buffer,c_uint, c_int,byref
 from utils.getPId import getPidFromWindow
@@ -14,7 +15,7 @@ def getTextFromWindow(hwnd):
 
 def getForegroundWindowPid(hwnd):
     pid = getPidFromWindow(hwnd)
-    print(pid)
+    # print(pid)
     return pid
 
 def getForegroudWindowPath(hwnd):
@@ -39,3 +40,13 @@ def get_explorer_path(hwnd):
 
 def getHwnd():
     return windll_32.GetForegroundWindow()
+
+
+# assume this is only ever called with an active chrome tid,pid tuple 
+def getChromeAdress(pid):
+    app = Application(backend="uia").connect(process=pid[1], timeout=10)
+    dlg = app.top_window()
+    title = "Address and search bar"
+    url = dlg.child_window(title=title, control_type="Edit").get_value()
+    return url
+

@@ -10,7 +10,7 @@ import win32com
 from .createMessage import warningMessage
 from .exeBlocker import kill
 from .WindowDataFinders import getTextFromWindow, getForegroundWindowPid, getForegroudWindowPath, getForegroundWindowTitle, get_explorer_path, getHwnd
-from utils.JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak
+from utils.JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak,ReadJSON,getList
 
 def warnKill(KillTime, killType, hwnd, pid = None):
         warningMessage(KillTime, killType, hwnd)
@@ -18,17 +18,15 @@ def warnKill(KillTime, killType, hwnd, pid = None):
         if getHwnd() != hwnd:
             return
         kill(killType, hwnd, pid)
+
+def stringChecker(blockedStrings, string):
+        for blockedString in blockedStrings:
+            if blockedString in string:
+                return True
+  
         
-def ExeChecker(paths, path):
-        for pathStart in paths:
-            if path.startswith(pathStart):
-                return True
-def windowChecker(titles, title):
-        for BlackListedTitle in titles:
-            if BlackListedTitle in title:
-                return True
-            
 def windowCloser():
+    
     Schedule = ReadSchedule()
     breakLeft = Schedule["break"]
     fiveMinuteWarning = False
@@ -43,16 +41,9 @@ def windowCloser():
         removeBreak(Schedule)
     timefromepoch = time.time()
     BlackList = ReadBlackList()
-    specialCases = BlackList["SpecialCases"].keys()
+    specialCases = BlackList["specialCases"]
     
     
-    
-    
-    # for each special case convert it to a regular string, turning special characters into their ascii values
-    for specialCase in specialCases:
-        specialCase = specialCase.encode('ascii', 'backslashreplace').decode('ascii')
-    print(specialCases)
-
     today = datetime.now().strftime("%m:%d:%y")
     print(today)
     for day in Schedule["DaysOff"]:
@@ -67,10 +58,10 @@ def windowCloser():
     
     startTime = Schedule[weekday]["start"]
     
-    # get the current time
+    # # get the current time
     now = datetime.now().strftime("%H:%M:%S")
     print (now)
-    # if the current time is less than the start time, sleep until the start time
+    # # if the current time is less than the start time, sleep until the start time
     if now < startTime:
         print("Sleeping until start time")
         # sleep until the start time
@@ -87,48 +78,122 @@ def windowCloser():
         path = getForegroudWindowPath(hwnd)
         print(title)
         print(path)
-        # if
+        pid = getForegroundWindowPid(hwnd)[-1]
+        if stringChecker(BlackList["paths"],path):
+            if fiveMinuteWarning:
+                if time.time()-timefromepoch<breakOverrideTime:
+                    breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
+                    warnKill(breakOverrideTime, "exe", hwnd, pid)
+            else:
+                warnKill(10, "exe", hwnd, pid)
+            fiveMinuteWarning=False
         
-        if path =="C:\Windows\explorer.exe":
-            print("explorer")
-            explorerPath = get_explorer_path(hwnd)
-            print(explorerPath)
-            # if not explorerPath:
-            #     break
-
-            
-            
-            
-            
-            
-            for FolderPath in BlackList["FolderPaths"]:
-                if explorerPath and FolderPath in explorerPath:
-            #         # this is the only scenario where we use kill("window")
-                    if fiveMinuteWarning:
-                        if time.time()-timefromepoch<breakOverrideTime:
-                            breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
-                            time.sleep(breakOverrideTime)
-                            # justwarn(5, "window", hwnd)
-                    kill("window", hwnd)
+        if stringChecker(BlackList["titles"],title):
+            if fiveMinuteWarning:
+                if time.time()-timefromepoch<breakOverrideTime:
+                    breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
+                    warnKill(breakOverrideTime, "exe", hwnd)
+            else:
+                warnKill(10, "exe", hwnd)
+            fiveMinuteWarning=False
+        for specialCase in specialCases:         
+            if specialCase["testTarget"]=="path":
+                if path and specialCase["case"] != path:
                     break
-        for pathStart in BlackList["paths"]:
-            pid = getForegroundWindowPid(hwnd)[-1]
-            if path.startswith(pathStart):
-                if fiveMinuteWarning==True:
-                    if time.time()-timefromepoch<breakOverrideTime:
-                        breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
-                        # justwarn(5, "exe", hwnd, pid)
-                        warnKill(breakOverrideTime, "exe", hwnd, pid)
-                else:
-                    warnKill(10, "exe", hwnd, pid)
-                fiveMinuteWarning=False
-                break
-        
-        # for BlackListedTitle in BlackList["titles"]:
-        #     if BlackListedTitle in title:
-        #         if fiveMinuteWarning == True:
-        #             justwarn(5, "window", hwnd)
+                if len(specialCase["whiteList"])>0:
+                    blocktarget = specialCase["blockTarget"]
+                    whiteList = getList(specialCase["whiteList"])
+                    blockme = True
+                    match blocktarget:
+                        case "title":
+                            if stringChecker(whiteList, title):
+                                blockme = False
+                        case "URL":
+                            # can only be accessed by chrome
+                            url = getChromeAdress(pid)
+                            if stringChecker(whiteList, url):
+                                blockme = False
+                        case "explorerPath":
+                            # can only be accessed by windows explorer
+                            explorerPath = get_explorer_path(hwnd)
+                            if stringChecker(whiteList, explorerPath):
+                                blockme = False
+                        case "path":
+                            if stringChecker(whiteList, path):
+                                blockme = False
+                    if not blockme:
+                        break
+                    else :
+                        # check for 5 minute warning
+                        if fiveMinuteWarning:
+                            if time.time()-timefromepoch<breakOverrideTime:
+                                breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
+                                warnKill(breakOverrideTime, specialCase["KillType"], hwnd)
+                        else:
+                            warnKill(10, specialCase["KillType"], hwnd)
+                elif path and specialCase["case"] in path:
+                    blockTarget = specialCase["blockTarget"]
+                    specialCaseBlockList = getList(specialCase["BlackListPath"])
+                    blockme = False
+                    match blockTarget:
+                        case "title":
+                            if stringChecker(specialCaseBlockList, title):
+                                blockme = True
+                        case "URL":
+                            url = getChromeAdress(pid)
+                            if stringChecker(specialCaseBlockList, url):
+                                blockme = True                            
+                            # this is used only for chrome, other web browsers should be blocked.
+                        case "explorerPath":
+                            explorerPath = get_explorer_path(hwnd)
+                            if stringChecker(specialCaseBlockList, explorerPath):
+                                blockme = True
+                            # this is used only for windows explorer
+                        case "path":
+                            if stringChecker(specialCaseBlockList, path):
+                                blockme = True
+                        case _:
+                            break
+                    if blockme:
+                        # check for 5 minute warning
+                        if fiveMinuteWarning:
+                            if time.time()-timefromepoch<breakOverrideTime:
+                                breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
+                                warnKill(breakOverrideTime, specialCase["KillType"], hwnd)
+                        else:
+                            warnKill(10, specialCase["KillType"], hwnd)
                     
+
+        
+        # if path =="C:\Windows\explorer.exe":
+        #     print("explorer")
+        #     explorerPath = get_explorer_path(hwnd)
+        #     print(explorerPath)
+        #     if stringChecker(BlackList["FolderPaths"], explorerPath):   
+        #         if fiveMinuteWarning:
+        #             if time.time()-timefromepoch<breakOverrideTime:
+        #                 breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
+        #                 time.sleep(breakOverrideTime)
+        #                     # justwarn(5, "window", hwnd)
+        #             # test to see that the window is still the same
+        #             testHwnd = getHwnd()
+        #             if testHwnd == hwnd:
+        #                 testpath = getForegroudWindowPath(testHwnd)
+        #                 if testpath == path:
+        #                     kill("window", hwnd)
+        #                     break                  
+        # for pathStart in BlackList["paths"]:
+        #     pid = getForegroundWindowPid(hwnd)[-1]
+        #     if path.startswith(pathStart):
+        #         if fiveMinuteWarning==True:
+        #             if time.time()-timefromepoch<breakOverrideTime:
+        #                 breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
+        #                 warnKill(breakOverrideTime, "exe", hwnd, pid)
+        #         else:
+        #             warnKill(10, "exe", hwnd, pid)
+        #         fiveMinuteWarning=False
+        #         break
+                    # get the specialCaseBlockList and BlockTarget
         time.sleep(1)
         if isBreak():
             return windowCloser()
