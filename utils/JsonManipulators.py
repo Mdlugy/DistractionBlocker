@@ -46,7 +46,11 @@ def isBreak():
     Schedule = ReadSchedule()
     breakLeft = Schedule["break"]
     return breakLeft!=0
-
+def addBreak(seconds):
+    schedule = ReadSchedule()
+    schedule["break"] = seconds
+    writeJson('scheduler.json', schedule)
+    return
 def fixPdfs():
     pdfs = ReadPDFs()
     new=[]
