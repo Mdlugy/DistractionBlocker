@@ -4,7 +4,7 @@ from datetime import datetime
 from utils.JsonManipulators import ReadSchedule, addBreak
 from threading import Thread
 from .components import  header_box
-from .component_utils import HideButton
+from .component_utils import DisableButton
 from .add_a_break_window import create_break_Window
 # import styles
 def update_time():
@@ -49,8 +49,8 @@ def open_settings():
 
 
 # change this 
-def add_break():
-    addBreak(200000)
+def update_break(seconds):
+    addBreak(seconds)
     update_break_left()
     
     
@@ -104,13 +104,14 @@ static_time = Text(end_time_box, text=get_static_time(), size=20,align="right")
 
 # Break Left (Placeholder for now)
 break_left = Text(break_left_box, text="", size=20)
-
+def create_new_break_window():
+    create_break_Window(app,disable_break_button, update_break)
 # Buttons
 settings_button = PushButton(settings_box, text="Settings", command=open_settings)
 remove_break_button = PushButton(break_left_box, text="End Break", command=remove_break)
-hide_break_button = HideButton()
-create_break_Window(app,hide_break_button)
-add_break_button = PushButton(break_buttons_box, text="Add Break", command=add_break, visible = hide_break_button.shown)
+add_break_button = PushButton(break_buttons_box, text="Add Break", command=create_new_break_window)
+disable_break_button = DisableButton(add_break_button)
+
 def start ():
     app.display()
     return

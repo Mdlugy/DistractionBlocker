@@ -24,21 +24,29 @@ def header_box(parent, heading, pageType):
     Text(header_box, text="", size=padding_size*2, bg=bg)
 
 
-def create_counter(parent,text, timerstate, value ="00",  max_val=100 ):
+def create_counter(parent,text, timerstate,timer_val, value ="00",  max_val=100 ):
     counter_box = Box(parent, layout="auto")
     Text(counter_box, text=text, align="left")
     number_box = TextBox(counter_box, text=value, align="left")
+    def updateValue(value):
+        if text == "hours:":
+            timer_val.updateHour(value)
+        elif text == "minutes:":
+            timer_val.updateMinute(value)
+        else :
+            timer_val.updateSecond(value)
+    
     def decrementLa():
         number_box.value=decrement(number_box.value, max_val)
-        timerstate=number_box.value
+        updateValue(number_box.value)
     def incrementLa():
         number_box.value=increment(number_box.value, max_val)
-        timerstate=number_box.value
+        updateValue(number_box.value)
 
     def validate_input():
         number_box.value= validate_int(number_box.value)
         number_box.value= validate_value(number_box.value, max_val)
-        timerstate=number_box.value
+        updateValue(number_box.value)
 
     number_box.when_key_released  = validate_input
     decrement_button = PushButton(counter_box, text="-", command=decrementLa, align="right")
@@ -49,9 +57,9 @@ def create_counter(parent,text, timerstate, value ="00",  max_val=100 ):
 
 def timer_selector(parent,timer_val):
     timer_selector_box = Box(parent, layout="auto",border=True, align="top")
-    create_counter(timer_selector_box,"hours:",timer_val.timerHour, "00" ,100)
-    create_counter(timer_selector_box,"minutes:",timer_val.timerMinute, "00" ,59)
-    create_counter(timer_selector_box,"seconds:",timer_val.timerSecond, "00" ,59)
+    create_counter(timer_selector_box,"hours:",timer_val.timerHour,timer_val, "00" ,24)
+    create_counter(timer_selector_box,"minutes:",timer_val.timerMinute,timer_val, "00" ,59)
+    create_counter(timer_selector_box,"seconds:",timer_val.timerSecond,timer_val, "00" ,59)
     return timer_selector_box
     
 def create_new_window(parent,title, windowType):
