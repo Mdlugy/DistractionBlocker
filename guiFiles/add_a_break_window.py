@@ -3,9 +3,9 @@ from utils.JsonManipulators import addBreak
 from .component_utils import TimerValue
 # creating a class to store the state of the timervalue
 
-def create_break_Window(parent,creationButtonShown, update_break):
+def create_break_Window(parent,creationButtonShown, time_state):
     creationButtonShown.toggleEnabled()
-    timer_val = TimerValue(update_break)
+    timer_val = TimerValue(addBreak)
     break_Window = create_new_window(parent,"Add a Break", "util_run")
 
     timer_selector(break_Window, timer_val)
