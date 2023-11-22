@@ -131,8 +131,9 @@ class TimeBox:
                 now = datetime.now()
                 self.current_time = now.strftime("%H:%M:%S")
                 self.get_break_time()
-                if self.break_time>1:
+                if self.break_time>0:
                     self.update_break(self.break_time-1)
+                     
                 self.get_static_times()
             time.sleep(0.01)
             counter += 1
@@ -171,6 +172,7 @@ class TimeBox:
     def remove_break(self):
         addBreak(0)
         self.get_break_time()
+        
 class componentUpdater:
     def __init__(self, state,target_attribute, component, update_function, runstop):
         self.state=state

@@ -6,6 +6,7 @@ from threading import Thread
 from .components import  header_box,create_time_box
 from .component_utils import DisableButton, RunStop, TimeBox
 from .add_a_break_window import create_break_Window
+from .add_settings_window import add_settings_window
 import asyncio
 # import styles
 
@@ -86,10 +87,15 @@ break_buttons_box = Box(app, layout="auto",border=True, align="right")
 def create_new_break_window():
     create_break_Window(app,disable_break_button,time_state)
 # Buttons
+def create_settings_window():
+    # disable_settings_button.toggleEnabled()
+    add_settings_window(app)
+    pass
 # settings_button = PushButton(settings_box, text="Settings", command=open_settings)
 add_break_button = PushButton(break_buttons_box, text="Add Break", command=create_new_break_window)
 disable_break_button = DisableButton(add_break_button)
-
+add_settings_button = PushButton(settings_box, text="Settings", command=create_settings_window)
+disable_settings_button = DisableButton(add_settings_button)
 def start ():
     app.display()
     return

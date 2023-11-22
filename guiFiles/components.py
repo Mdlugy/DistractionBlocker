@@ -23,7 +23,29 @@ def header_box(parent, heading, pageType):
     Text(header_box, text=heading, color=fg, font=font, size=size, bg=bg    )
     # bottom padding
     Text(header_box, text="", size=padding_size*2, bg=bg)
+def update_day_schedule(day,parent):
+    
+def day_schedule_box(parent, day, start, end,Parentwindow):
+    def update_day_schedule_box_lambda(day, Parentwindow):
+        update_day_schedule(day)
+    day_schedule_box = Box(parent, layout="auto",border=True, align="top", width="fill")
+    Text(day_schedule_box, text=day, align="left")
+    Text(day_schedule_box, text=start, align="right")
+    Text(day_schedule_box, text=end, align="right")
+    
+    return day_schedule_box
 
+def schedule_show(parent,schedule):
+    main_box = Box(parent, layout="auto",border=True, align="top")
+    day_schedule_box(main_box, "Day", "Start", "End")
+    print(schedule)
+    day_schedule_box(main_box, "Mondays", schedule["Monday"]["start"], schedule["Monday"]["end"],parent)
+    day_schedule_box(main_box, "Tuesdays", schedule["Tuesday"]["start"], schedule["Tuesday"]["end"],parent)
+    day_schedule_box(main_box, "Wednesdays", schedule["Wednesday"]["start"], schedule["Wednesday"]["end"],parent)
+    day_schedule_box(main_box, "Thursdays", schedule["Thursday"]["start"], schedule["Thursday"]["end"],parent)
+    day_schedule_box(main_box, "Fridays", schedule["Friday"]["start"], schedule["Friday"]["end"],parent)
+    day_schedule_box(main_box, "Saturdays", schedule["Saturday"]["start"], schedule["Saturday"]["end"],parent)
+    day_schedule_box(main_box, "Sundays", schedule["Sunday"]["start"], schedule["Sunday"]["end"],parent)
 
 def create_counter(parent,text, timerstate,timer_val, value ="00",  max_val=100 ):
     counter_box = Box(parent, layout="auto")
