@@ -44,7 +44,7 @@ def windowCloser():
     specialCases = BlackList["specialCases"]
     
     
-    today = datetime.now().strftime("%m:%d:%y")
+    today = datetime.now().strftime("%m/%d/%Y")
     print(today)
     for day in Schedule["DaysOff"]:
         if day == today:

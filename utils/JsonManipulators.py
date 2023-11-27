@@ -17,12 +17,6 @@ def writeJson(fileName, data):
         json.dump(data, file)
     return
 
-def write_json(fileName, data):
-    # Define the directory where the JSON file will be saved
-    # Construct the full file path
-    file_path = os.path.join(directory, fileName)
-    
-    # Write the JSON data to the file
 
 def ReadPDFs():
     return ReadJSON('PDFs.json')
@@ -38,7 +32,7 @@ def removeBreak(schedule):
 
 def removeDayOff(schedule):
     # set schedule[break] to 0 and write to file
-    today = datetime.now().strftime("%m:%d:%y")
+    today = datetime.now().strftime("%m/%d/%Y")
     schedule["DaysOff"].remove(today)
     writeJson('scheduler.json', schedule)
 

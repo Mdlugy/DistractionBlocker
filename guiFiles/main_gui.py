@@ -28,7 +28,7 @@ def seconds_to_time(seconds):
 #     addBreak(seconds)
 #     update_break_left()
     
-    
+    # 9
     
     
     
@@ -90,6 +90,7 @@ def create_new_break_window():
 def create_settings_window():
     # disable_settings_button.toggleEnabled()
     add_settings_window(app)
+    
     pass
 # settings_button = PushButton(settings_box, text="Settings", command=open_settings)
 add_break_button = PushButton(break_buttons_box, text="Add Break", command=create_new_break_window)

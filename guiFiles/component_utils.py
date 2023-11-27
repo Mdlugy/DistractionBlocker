@@ -1,7 +1,7 @@
 import threading
 import time
 from datetime import datetime, timedelta
-from utils.JsonManipulators import ReadSchedule, addBreak
+from utils.JsonManipulators import ReadSchedule, addBreak, writeJson
 
 def is_time_between(current_time_str, start_time_str, end_time_str):
     current_time = datetime.strptime(current_time_str, "%H:%M:%S").time()
@@ -19,28 +19,37 @@ def validate_int(str):
         return f"0{num}"
     return f"{num}"
 
-def validate_value (num,max_val):
+def validate_value (num,max_val, min_val):
     num = int(num)
     if num > max_val:
-        return "00"
-    elif num < 0:
+        if min_val == 0:
+            return "00"
+        elif min_val < 10:
+            return f"0{min_val}"
+        return f"{min_val}" 
+    elif num < min_val:
+        if min_val>100:
+            # if the min_val is too high I don't want to loop around the max_val, I'd rather just stop the decrement
+            return f"{min_val}"
         return f"{max_val}"
     elif num < 10:
         return f"0{num}"
-    return f"{num}"
     
-def increment(str, max_val):
+    return f"{num}"
+
+
+def increment(str, max_val, min_val):
     intstr=validate_int(str)
     num = int(intstr)
     num += 1
-    num = validate_value(num,max_val)
+    num = validate_value(num,max_val, min_val)
     return num
 
-def decrement(str, max_val):
+def decrement(str, max_val, min_val):
     intstr=validate_int(str)
     num = int(intstr)
     num -= 1
-    num = validate_value(num,max_val)
+    num = validate_value(num,max_val,min_val )
     return num
 # a utility class that'll be passed into any classes that run treaded processes to trigger a stop from the main thread
 class RunStop:
@@ -75,25 +84,55 @@ class RunStop:
 
         
 # a Class for storing the state of the break being set. might be refactored and extended to be re-used for other time objects 
-class TimerValue:
-    def __init__(self, addBreak):
-        # self.run_stop = run_stop
+class TimeBase:
+    def __init__(self):
         self.timerHour = "00"
         self.timerMinute = "00"
         self.timerSecond = "00"
-        self.addBreak = addBreak
     def updateHour(self, value):
         self.timerHour = value
     def updateMinute(self, value):
         self.timerMinute = value
     def updateSecond(self, value):
         self.timerSecond = value
+
+class TimeValue(TimeBase):
+    def __init__(self, stringValue):
+        super().__init__()
+        self.time = stringValue
+        self.convertStringToTime()
+    def convertStringToTime(self):
+        self.timerHour = self.time.split(":")[0]
+        self.timerMinute = self.time.split(":")[1]
+        self.timerSecond = self.time.split(":")[2]
+    def updateTime(self,value):
+        self.time = value
+        self.convertStringToTime()
+    def updateselfTime(self):
+        self.time = f"{self.timerHour}:{self.timerMinute}:{self.timerSecond}"
+    
+    def updateHour(self, value):
+        super().updateHour(value)
+        self.updateselfTime()
+
+    def updateMinute(self, value):
+        super().updateMinute(value)
+        self.updateselfTime()
+
+    def updateSecond(self, value):
+        super().updateSecond(value)
+        self.updateselfTime()
+class CountDownTimer(TimeBase):
+    def __init__(self, addBreak):
+        super().__init__()
+        # self.run_stop = run_stop
+        self.addBreak = addBreak
     def convertToSeconds(self):
         return int(self.timerHour)*3600 + int(self.timerMinute)*60 + int(self.timerSecond)
     def updateBreak(self):
         seconds = self.convertToSeconds()
         self.addBreak(self.convertToSeconds())
-        
+
 # a utility class passed into objects created after new windows are open to block the use of the button which creates that window
 class DisableButton:
     def __init__(self, button):
@@ -172,7 +211,14 @@ class TimeBox:
     def remove_break(self):
         addBreak(0)
         self.get_break_time()
-        
+class ListUpdater:
+    def __init__(self):
+        self.callback = None
+    def setCallback(self,callbackFunction):
+        self.callback = callbackFunction
+    def callCallback(self):
+        self.callback()
+
 class componentUpdater:
     def __init__(self, state,target_attribute, component, update_function, runstop):
         self.state=state
@@ -190,8 +236,125 @@ class componentUpdater:
             
     def stop(self):
         self.runstop.markForJoin(self.update_thread)
+class datecreator:
+    def __init__(self):
+        self.date = None
+        self.day = None
+        self.month = None
+        self.year = None
+        self.initialize_date()
+
+    def initialize_date(self):
+        self.date = datetime.now().strftime("%m/%d/%Y")
+        self.day = datetime.now().strftime("%d")
+        self.month = datetime.now().strftime("%m")
+        self.year = datetime.now().strftime("%Y")
+
+    def update_date(self):
+        try:
+            year = int(self.year)
+            month = int(self.month)
+            day = int(self.day)
+            date = datetime(year, month, day)
+        except ValueError:
+            # Handle invalid date values, e.g., leap year issue, invalid month/day, etc.
+            date = decrement_to_valid_date(datetime(year, month, day))  
+        self.date = date.strftime("%m/%d/%Y")
+
+    def updateDay(self, value):
+        self.day = value
+        if len(self.day) == 1:
+            self.day = f"0{self.day}"
+        self.update_date()
+        
+    def updateMonth(self, value):
+        self.month = value
+        if len(self.month) == 1:
+            self.month = f"0{self.month}"
+        self.update_date()
+        
+    def updateYear(self, value):
+        self.year = value
+        self.update_date()
+        
+    def validate(self):
+        date = self.date
+        print (date)
+        # convert from strftime('%m/%d/%Y') to datetime
+        date = datetime.strptime(date, "%m/%d/%Y")
+        # get today datetime
+        today = datetime.today()
+        if date < today:
+            date = today
+        self.date = date.strftime("%m/%d/%Y")
+        
+def decrement_to_valid_date(date):
+    while True:
+        try:
+            valid_date = date
+            return valid_date.strftime("%m/%d/%Y")
+        except ValueError:
+            date = date.replace(day=date.day - 1)
+            if date.day == 0:
+                raise ValueError("Invalid starting date provided.")
 
 
+    
+class Scheduler :
+    def __init__(self):
+        self.Monday = None
+        self.Tuesday = None
+        self.Wednesday = None
+        self.Thursday = None
+        self.Friday = None
+        self.Saturday = None
+        self.Sunday = None
+        self.day_to_update = None
+        self.daysOff = None
+        self.read_schedule()
+    def read_schedule(self):
+        schedule = ReadSchedule()
+        self.Monday = self.update_day_init(schedule['Monday'])
+        self.Tuesday = self.update_day_init(schedule['Tuesday'])
+        self.Wednesday = self.update_day_init(schedule['Wednesday'])
+        self.Thursday = self.update_day_init(schedule['Thursday'])
+        self.Friday = self.update_day_init(schedule['Friday'])
+        self.Saturday = self.update_day_init(schedule['Saturday'])
+        self.Sunday = self.update_day_init(schedule['Sunday'])
+        sorted_dates = sorted(set(schedule['DaysOff']), key=lambda x: time.strptime(x, "%m/%d/%Y"))
+        self.daysOff = sorted_dates
+    def update_day_init(self, day):
+        start =TimeValue(day['start'])
+        end = TimeValue(day['end'])
+        return {"start":start, "end":end}
+    def remove_day_off(self, day):
+        if day in self.daysOff:
+            self.daysOff.remove(day)
+            print(f"Removed {day}. Current days off: {self.daysOff}")
+        else:
+            print(f"{day} not found in days off.")
+        schedule = ReadSchedule()
+        schedule['DaysOff'] = self.daysOff
+        writeJson('scheduler.json', schedule)
+        
+    def update_sched_val(self, day, part, value):
+        schedule = ReadSchedule()
+        print(value)
+        schedule[day][part] = value
+        writeJson('scheduler.json', schedule)
+        if part == "start":
+            self.__dict__[day]["start"].updateTime(value)
+        elif part == "end":
+            self.__dict__[day]["end"].updateTime(value)
+    def add_day_off(self,val):
+        daysOff = self.daysOff
+        daysOff.append(val)
+        sorted_dates = sorted(set(daysOff), key=lambda x: time.strptime(x, "%m/%d/%Y"))
+        self.daysOff=sorted_dates
+        schedule = ReadSchedule()
+        schedule['DaysOff'] = self.daysOff
+        writeJson('scheduler.json', schedule)
+        
 def get_break_left():
     schedule = ReadSchedule()
     break_left = schedule['break']
@@ -229,3 +392,6 @@ def update_hidden_box(component, value):
         component.show()
     else:
         component.hide()
+
+
+

@@ -1,7 +1,65 @@
 import threading
 from guizero import TextBox, Text, PushButton, Box, Window
+from tkinter import Canvas, Scrollbar, Frame, Label
 from .styles import  TextColors, BGcolors,fonts, ButtonPaddings
-from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label,componentUpdater
+from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label,componentUpdater,DisableButton,ListUpdater,datecreator
+import time 
+
+
+def destroy_widgets(container):
+    for widget in container.children:
+        widget.destroy()
+    return check_widgets_destroyed(container)
+
+def check_widgets_destroyed(container):
+    # Check if all widgets are destroyed
+    return len(container.children) == 0
+
+def wait_for_destruction(container):
+    while not destroy_widgets(container):
+        time.sleep(0.01)  # Wait for a short period before checking again
+    print("succesfully removed widgets")
+    return True
+
+
+
+def create_scrollable_list_box(parent_box, items, stylestring, update_callBack):
+    canvas = Canvas(parent_box.tk, highlightthickness=0, bg=BGcolors[stylestring])
+    scrollbar = Scrollbar(parent_box.tk, orient="vertical", command=canvas.yview)
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Grid layout for canvas and scrollbar
+    canvas.grid(row=0, column=0, sticky="nsew")
+    scrollbar.grid(row=0, column=1, sticky="ns")
+
+    # Frame inside canvas with styling
+    frame = Frame(canvas, bg=BGcolors[stylestring])
+    canvas_frame = canvas.create_window((0, 0), window=frame, anchor="nw")
+
+    # Function to update the content of the frame
+    def rebuild_content():
+        print("rebuild content called")
+        # Clear existing content
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        # Rebuild with updated items
+        for item in items:
+            label = Label(frame, text=item, bg=BGcolors[stylestring], fg="black", font=(fonts['default'], 12))
+            label.pack()
+
+        # Update scroll region
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    # Bind the frame configuration to update the scroll region
+    frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    # Store the rebuild function in the callback
+    update_callBack.setCallback(rebuild_content)
+    rebuild_content()
+
+
+
 def header_box(parent, heading, pageType):
     padding_size = 5 
     bg = BGcolors[pageType+"_header"]
@@ -23,52 +81,217 @@ def header_box(parent, heading, pageType):
     Text(header_box, text=heading, color=fg, font=font, size=size, bg=bg    )
     # bottom padding
     Text(header_box, text="", size=padding_size*2, bg=bg)
-def update_day_schedule(day,parent):
     
-def day_schedule_box(parent, day, start, end,Parentwindow):
-    def update_day_schedule_box_lambda(day, Parentwindow):
-        update_day_schedule(day)
+def update_day_schedule(day_name,day,state,parent,refreshValue,disable_edit_button):
+    disable_edit_button.toggleEnabled()
+    def close_window():
+        disable_edit_button.toggleEnabled()
+        timeWindow.destroy()
+    def update_day_start():
+        state.update_sched_val(day_name,"start",day["start"].time)
+        refreshValue("start")
+    def update_day_end():
+        state.update_sched_val(day_name,"end",day["end"].time)
+        refreshValue("end")
+        
+    
+    timeWindow = create_new_window(parent, f"schedule for {day_name}", "util_edit")
+    start_time_box = Box(timeWindow, layout="auto",border=True, align="top", width="fill")
+    Text(start_time_box, text="start time:", align="left")
+    startTime = day["start"]
+    create_counter(start_time_box,"hours:",startTime, startTime.timerHour ,24)
+    create_counter(start_time_box,"minutes:",startTime,startTime.timerMinute ,59)
+    create_counter(start_time_box,"seconds:",startTime,startTime.timerSecond ,59)
+    PushButton(start_time_box, text= "Update", command=update_day_start, align="right")
+    end_time_box = Box(timeWindow, layout="auto",border=True, width="fill")
+    Text(end_time_box, text="end time:", align="left")
+    end_time =day["end"]
+    create_counter(end_time_box,"hours:",end_time, end_time.timerHour ,24)
+    create_counter(end_time_box,"minutes:",end_time, end_time.timerMinute ,59)
+    create_counter(end_time_box,"seconds:",end_time, end_time.timerSecond ,59)
+    PushButton(end_time_box, text= "Update", command=update_day_end, align="right")
+    timeWindow.when_closed = close_window
+    return timeWindow
+
+def day_schedule_box(parent, day_name,state,day,Parentwindow):
+    def refreshValue(startend):
+        if startend == "start":
+            print('start', day["start"].time)
+            start_time_text.value = f"start-time: {day['start'].time}"
+        else:
+            print('end', day["end"].time)
+            end_time_text.value = f"end-time: {day['end'].time}"
+       
+    def update_day_schedule_box_lambda():
+        update_day_schedule(day_name,day, state, Parentwindow,refreshValue, disable_edit_button)
     day_schedule_box = Box(parent, layout="auto",border=True, align="top", width="fill")
-    Text(day_schedule_box, text=day, align="left")
-    Text(day_schedule_box, text=start, align="right")
-    Text(day_schedule_box, text=end, align="right")
-    
+    Text(day_schedule_box, text=day_name, align="left")
+    start_time_text=Text(day_schedule_box, text=f"start-time: {day["start"].time}" )
+    end_time_text=Text(day_schedule_box, text=f"end-time:{day["end"].time}")
+    edit_button=PushButton(day_schedule_box, text="Edit", command=update_day_schedule_box_lambda, align="right")
+    disable_edit_button = DisableButton(edit_button)
     return day_schedule_box
+
+def remove_dayOffsOffBox(parent,state,refreshcomponent):
+    current_page = 0
+    totalPages = len(state.daysOff)/6
+    totalPages = int(totalPages)
+    
+    print(totalPages)
+    removeDaysOFfParentBox=Box(parent,layout="auto",border=True,align="top",width="fill")
+    removeDaysOffBox = Box(parent, layout="auto",border=True, align="top",width="fill")
+    dayBoxes={}
+    def createDayBoxpage(parentBox, dayOff, pageNumber):
+        nonlocal current_page
+        wait_for_destruction(parentBox)
+        # for widget in parentBox.children:
+        #     widget.destroy()
+        if pageNumber<=totalPages and pageNumber>=0:
+            current_page=pageNumber
+        print(current_page)
+        # Clear existing content
+        updateNavigationButtons()
+        startIndex = pageNumber * 6
+        endIndex = startIndex + 6
+        print(startIndex,endIndex)
+    # Slice the daysOff list for the current page
+        daysOffSlice = state.daysOff[startIndex:endIndex+1]
+        print(daysOffSlice)
+        dayBoxes ={}
+        for dayOff in daysOffSlice:
+            daybox = Box(removeDaysOffBox, layout="auto", border=True, align="top")
+            dayBoxButton = PushButton(daybox, text="remove", command=lambda dayOff=dayOff: remove_dayOff(dayOff),align="right")
+            Text(daybox, text=dayOff, align="left")
+            dayBoxes[dayOff] = daybox 
+            
+    def updateNavigationButtons():
+        nonlocal totalPages
+        totalPages = len(state.daysOff)/6
+        # Clear existing navigation buttons
+        wait_for_destruction(removeDaysOFfParentBox)
+        # for widget in removeDaysOFfParentBox.children:
+        #     widget.destroy()
+        
+        # Create navigation buttons
+        nonlocal current_page
+        
+        if current_page != 0:
+            previous_button = PushButton(removeDaysOFfParentBox, text="Previous", command=lambda: createDayBoxpage(removeDaysOffBox, state.daysOff, current_page - 1), align="left")
+        if current_page < totalPages-1:
+           next_button = PushButton(removeDaysOFfParentBox, text="Next", command=lambda: createDayBoxpage(removeDaysOffBox, state.daysOff, current_page + 1), align="right")
+
+
+    def remove_dayOff(day):
+        print(day)
+        state.remove_day_off(day)
+        refreshcomponent.callCallback()
+
+        keys_to_check = list(dayBoxes.keys())
+        for day_key in keys_to_check:
+            if day_key not in state.daysOff:
+                box = dayBoxes[day_key]
+                box.destroy()
+                del dayBoxes[day_key]
+                refreshcomponent.callCallback()
+        nonlocal totalPages
+        totalPages = len(state.daysOff) // 10
+        nonlocal current_page
+        if current_page>totalPages:
+            current_page-=1
+        createDayBoxpage(removeDaysOffBox, state.daysOff, current_page)
+    
+    createDayBoxpage(removeDaysOffBox, state.daysOff,current_page)
+    return removeDaysOffBox
+
+def addDayOffBox(parent,state,refreshcomponent):
+    add_dayOff_box = Box(parent, layout="auto",border=True, align="right", width="fill")
+    date_val = datecreator()
+    day = date_val.day
+    month = date_val.month
+    year = date_val.year
+    create_counter(add_dayOff_box,"month:",date_val, month ,12,1)
+    create_counter(add_dayOff_box,"day:",date_val, day ,31,1)
+    create_counter(add_dayOff_box,"year:",date_val, year ,9999,2023)
+    def add_dayOff():
+        date_val.validate()
+        date = date_val.date
+        print("day to add",date)
+        state.add_day_off(date)
+        refreshcomponent.callCallback()
+    PushButton(add_dayOff_box, text= "Add", command=add_dayOff, align="right")
+    
+    
+def update_daysOff(parent,state,refreshcomponent):
+    daysOffWindow = create_new_window(parent, "Days Off", "util_edit")
+    daysOffWindow.height = 750
+    daysOffWindow.width = 500
+    
+    remove_dayOffsOffBox(daysOffWindow,state,refreshcomponent)
+    addDayOffBox(daysOffWindow,state,refreshcomponent)
+def daysOff_box(parent, daysOff, schedule):
+    refresh_dates_box = ListUpdater()
+    def update_daysOff_box_creator():
+        update_daysOff(parent, schedule,refresh_dates_box)
+    # dates={}
+    # def createList(parentBox, daysOff):
+    #     for string in daysOff:
+    #         dates[string] = Text(parentBox, text=string, size=14, font="Arial", align="top")
+
+    # def refresh_dates_box():
+    #     for string in dates:
+    #         if string not in schedule.daysOff:
+    #             dates[string].destroy()
+    #             del dates[string]
+    
+    daysOff_box = Box(parent, layout="auto",border=True, align="right", width="fill")
+    label = Text(daysOff_box, text="Days Off", size=14, font="Arial", align="top")
+    dates_box = Box(daysOff_box, layout="auto",border=True, align="top", width="fill")
+    create_scrollable_list_box(dates_box, daysOff, "util_edit", refresh_dates_box)
+    edit_button=PushButton(daysOff_box, text="Edit", command=update_daysOff_box_creator, align="top")
+    
+    return daysOff_box
 
 def schedule_show(parent,schedule):
     main_box = Box(parent, layout="auto",border=True, align="top")
-    day_schedule_box(main_box, "Day", "Start", "End")
-    print(schedule)
-    day_schedule_box(main_box, "Mondays", schedule["Monday"]["start"], schedule["Monday"]["end"],parent)
-    day_schedule_box(main_box, "Tuesdays", schedule["Tuesday"]["start"], schedule["Tuesday"]["end"],parent)
-    day_schedule_box(main_box, "Wednesdays", schedule["Wednesday"]["start"], schedule["Wednesday"]["end"],parent)
-    day_schedule_box(main_box, "Thursdays", schedule["Thursday"]["start"], schedule["Thursday"]["end"],parent)
-    day_schedule_box(main_box, "Fridays", schedule["Friday"]["start"], schedule["Friday"]["end"],parent)
-    day_schedule_box(main_box, "Saturdays", schedule["Saturday"]["start"], schedule["Saturday"]["end"],parent)
-    day_schedule_box(main_box, "Sundays", schedule["Sunday"]["start"], schedule["Sunday"]["end"],parent)
+    # day_schedule_box(main_box, "Day", "Start", "End")
+    day_schedule_box(main_box, "Monday", schedule,schedule.Monday,parent)
+    day_schedule_box(main_box, "Tuesday", schedule,schedule.Tuesday,parent)
+    day_schedule_box(main_box, "Wednesday", schedule,schedule.Wednesday,parent)
+    day_schedule_box(main_box, "Thursday", schedule,schedule.Thursday,parent)
+    day_schedule_box(main_box, "Friday", schedule,schedule.Friday,parent)
+    day_schedule_box(main_box, "Saturday", schedule,schedule.Saturday,parent)
+    day_schedule_box(main_box, "Sunday", schedule,schedule.Sunday,parent)
+    daysOff_box(main_box, schedule.daysOff, schedule)
 
-def create_counter(parent,text, timerstate,timer_val, value ="00",  max_val=100 ):
+def create_counter(parent,text,timer_val, value ="00",  max_val=100, min_val=0 ):
     counter_box = Box(parent, layout="auto")
     Text(counter_box, text=text, align="left")
     number_box = TextBox(counter_box, text=value, align="left")
     def updateValue(value):
-        if text == "hours:":
-            timer_val.updateHour(value)
-        elif text == "minutes:":
-            timer_val.updateMinute(value)
-        else :
-            timer_val.updateSecond(value)
-    
+        match text:
+            case "hours:":
+                timer_val.updateHour(value)
+            case "minutes:":
+                timer_val.updateMinute(value)
+            case "seconds:":
+                timer_val.updateSecond(value)
+            case "month:":
+                timer_val.updateMonth(value)
+            case "day:":
+                timer_val.updateDay(value)
+            case "year:":
+                timer_val.updateYear(value)
+                
     def decrementLa():
-        number_box.value=decrement(number_box.value, max_val)
+        number_box.value=decrement(number_box.value, max_val,min_val)
         updateValue(number_box.value)
     def incrementLa():
-        number_box.value=increment(number_box.value, max_val)
+        number_box.value=increment(number_box.value, max_val,min_val)
         updateValue(number_box.value)
 
     def validate_input():
         number_box.value= validate_int(number_box.value)
-        number_box.value= validate_value(number_box.value, max_val)
+        number_box.value= validate_value(number_box.value, max_val,min_val)
         updateValue(number_box.value)
 
     number_box.when_key_released  = validate_input
@@ -80,9 +303,9 @@ def create_counter(parent,text, timerstate,timer_val, value ="00",  max_val=100 
 
 def timer_selector(parent,timer_val):
     timer_selector_box = Box(parent, layout="auto",border=True, align="top")
-    create_counter(timer_selector_box,"hours:",timer_val.timerHour,timer_val, "00" ,24)
-    create_counter(timer_selector_box,"minutes:",timer_val.timerMinute,timer_val, "00" ,59)
-    create_counter(timer_selector_box,"seconds:",timer_val.timerSecond,timer_val, "00" ,59)
+    create_counter(timer_selector_box,"hours:",timer_val, "00" ,24)
+    create_counter(timer_selector_box,"minutes:",timer_val, "00" ,59)
+    create_counter(timer_selector_box,"seconds:",timer_val, "00" ,59)
     return timer_selector_box
     
 def create_new_window(parent,title, windowType):
@@ -90,6 +313,7 @@ def create_new_window(parent,title, windowType):
 
     window = Window(parent,title=title, layout="auto", bg=BGcolors[windowType])
     header_box(window, title, windowType)
+    Text(window, text="", size=10)
     return window
 
 def create_button(parent, text, command, buttonType, size):
