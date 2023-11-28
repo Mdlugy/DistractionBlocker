@@ -2,7 +2,7 @@ import threading
 from guizero import TextBox, Text, PushButton, Box, Window
 from tkinter import Canvas, Scrollbar, Frame, Label
 from .styles import  TextColors, BGcolors,fonts, ButtonPaddings
-from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label,componentUpdater,DisableButton,ListUpdater,datecreator
+from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label,componentUpdater,DisableButton,ListUpdater,datecreator, BlackList
 import time 
 
 
@@ -23,14 +23,16 @@ def wait_for_destruction(container):
 
 
 
-def create_scrollable_list_box(parent_box, items, stylestring, update_callBack):
-    canvas = Canvas(parent_box.tk, highlightthickness=0, bg=BGcolors[stylestring])
+def create_scrollable_list_box(parent_box, items, stylestring, update_callBack, height=200, LabelText=None,  ):
+    if LabelText:
+        Label(parent_box.tk, text=LabelText, bg=BGcolors[stylestring],fg="white", font=("Arial", 12)).grid(row=0, column=0, sticky="nsew")
+
+    canvas = Canvas(parent_box.tk, highlightthickness=0, bg=BGcolors[stylestring], height=height,width=400)
     scrollbar = Scrollbar(parent_box.tk, orient="vertical", command=canvas.yview)
     canvas.configure(yscrollcommand=scrollbar.set)
-
     # Grid layout for canvas and scrollbar
-    canvas.grid(row=0, column=0, sticky="nsew")
-    scrollbar.grid(row=0, column=1, sticky="ns")
+    canvas.grid(row=1, column=0, sticky="nsew")
+    scrollbar.grid(row=1, column=1, sticky="ns")
 
     # Frame inside canvas with styling
     frame = Frame(canvas, bg=BGcolors[stylestring])
@@ -252,7 +254,7 @@ def daysOff_box(parent, daysOff, schedule):
     return daysOff_box
 
 def schedule_show(parent,schedule):
-    main_box = Box(parent, layout="auto",border=True, align="top")
+    main_box = Box(parent, layout="auto",border=True, align="left")
     # day_schedule_box(main_box, "Day", "Start", "End")
     day_schedule_box(main_box, "Monday", schedule,schedule.Monday,parent)
     day_schedule_box(main_box, "Tuesday", schedule,schedule.Tuesday,parent)
@@ -359,3 +361,131 @@ def create_time_box(parent, time_state,run_stop):
 # break_left_box = Box(times_box, layout="auto",border=True, align="bottom", visible=False)
 
 # # padding between times_box and buttons_box
+# def create_scrollable_list_box(parent_box, items, stylestring, update_callBack):
+
+def blackList_category_box(parent, category, state, refreshcomponent):
+    category_box = Box(parent, layout="auto",border=True, align="top", width="fill")
+    itemList = state.get_category(category)
+    # label = Text(parent, text=category, size=10, font="Arial", align="top")
+    items_area = create_scrollable_list_box(category_box, itemList, "util_edit", refreshcomponent,75, category) 
+    return category_box
+def blackList_show(parent):
+    blackList_box = Box(parent, layout="auto",border=True, align="right", width="fill")
+    blackList_box.tk.configure(background=BGcolors["edit"])
+    blackList_box.tk.configure(background=BGcolors["edit"])
+    Text(blackList_box, text="BLACKLIST", size=20)
+    blacklist_state = BlackList()
+  
+    refresh_paths_box = ListUpdater()
+    paths_box = blackList_category_box(blackList_box, "paths", blacklist_state, refresh_paths_box)
+    
+    refresh_titles_box = ListUpdater()
+    titles_box = blackList_category_box(blackList_box, "titles", blacklist_state, refresh_titles_box)
+    refresh_folder_paths_box = ListUpdater()
+    folder_paths_box = blackList_category_box(blackList_box, "FolderPaths", blacklist_state, refresh_folder_paths_box)
+    refresh_urls_box = ListUpdater()
+    urls_box = blackList_category_box(blackList_box, "Urls", blacklist_state, refresh_urls_box)
+    refresh_special_cases_box = ListUpdater()
+    special_cases_box = blackList_category_box(blackList_box, "SpecialCases", blacklist_state,refresh_special_cases_box)
+    def create_blackList_edit_window():
+        blackList_edit_window(parent, disable_edit_button, blacklist_state)
+    
+    edit_button=PushButton(blackList_box, text="Edit", command=create_blackList_edit_window, align="bottom")
+    disable_edit_button = DisableButton(edit_button)
+    return blackList_box
+
+def blackList_edit_window(parent, disable_edit_button, blacklist_state):
+    blackList_edit_window = create_new_window(parent, "Edit Blacklist", "util_edit")
+    blackList_edit_window.height = 750
+    blackList_edit_window.width = 500
+    body = Box(blackList_edit_window, layout="auto", border=True, align="top", width="fill", height="fill")
+    top = Box(body, layout="auto", border=True, align="top", width="fill", height="fill")
+    top_top = Box(top, layout="auto", border=True, align="top", width="fill", height="fill")
+    top_bottom = Box(top, layout="auto", border=True, align="bottom", width="fill", height="fill")
+    bottom = Box(body, layout="auto", border=True, align="bottom", width="fill", height="fill")
+
+    pathsBox= create_blackList_edit_box(top_top, "paths", blacklist_state,"left" )
+    titlesBox= create_blackList_edit_box(top_top, "titles", blacklist_state,"right" )
+    
+    folderPathsBox= create_blackList_edit_box(top_bottom, "FolderPaths", blacklist_state,"left" )
+    urlsBox= create_blackList_edit_box(top_bottom, "Urls", blacklist_state,"right" )
+    
+    blackList_edit_window.show()
+    
+def create_blackList_edit_box(parent, category, blacklist_state, align_pos):
+    category_box = Box(parent, layout="auto",border=True, width="fill", height="fill", align= align_pos)
+    category_text=Text(category_box, text=category, size=10, font="Arial", align="top")
+    itemList = blacklist_state.get_category(category)
+    for item in itemList:
+        def removeItem():
+            blacklist_state.remove_blackList_item(category, item)
+            
+        create_blackList_edit_item_box(category_box, item,removeItem) 
+        
+    return category_box
+def create_blackList_edit_item_box(parent, item, remove_blackList_item_callback):
+    item_box = Box(parent, layout="auto",border=True, align="top", width="fill")
+    Text(item_box, text=item, size=10, font="Arial", align="left")
+    remove_button = PushButton(item_box, text="remove", command=remove_blackList_item_callback,align="right")
+    
+    #                           BlackList Edit Window
+    #                        Paths:              Titles:   
+    
+          
+    #                       FolderPaths:            Urls:    
+    
+    
+    #                       SpecialCases:       addNew:
+    
+    
+    
+    
+    # 
+    
+    # day_schedule_box(main_box, "Monday", schedule,schedule.Monday,parent)
+    # day_schedule_box(main_box, "Tuesday", schedule,schedule.Tuesday,parent)
+    # day_schedule_box(main_box, "Wednesday", schedule,schedule.Wednesday,parent)
+    # day_schedule_box(main_box, "Thursday", schedule,schedule.Thursday,parent)
+    # day_schedule_box(main_box, "Friday", schedule,schedule.Friday,parent)
+    # day_schedule_box(main_box, "Saturday", schedule,schedule.Saturday,parent)
+    # day_schedule_box(main_box, "Sunday", schedule,schedule.Sunday,parent)
+    # daysOff_box(main_box, schedule.daysOff, schedule)
+    
+#     {"paths": ["I:\\"], "titles": ["Games (I:)"], "FolderPaths": ["I:\\"], "Urls":[],
+# "SpecialCases":[
+#         {   
+#             "Label":"Firefox"
+#             "KillType":"exe",
+#             "Case":"C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+#             "TestTarget":"path",
+#             "WhiteList":["Firefox Developer Edition"],
+#             "BlackListpath":[],
+#             "BlockTarget":"title"
+#         },
+#         {   "Label": "IrfanView"
+#             "KillType":"exe",
+#             "case":"C:\\Program Files\\IrfanView\\i_view64.exe",
+#             "TestTarget":"path",
+#             "WhiteList":[],
+#             "BlackListpath":["blackList.json","FolderPaths"],
+#             "BlockTarget":"title"
+#         },
+#         {   "Label": "Chrome"
+#             "KillType":"window",
+#             "case":"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+#             "TestTarget":"path",
+#             "WhiteList":[],
+#             "BlackListpath":["blackList.json","Urls"],
+#             "BlockTarget":"URL"
+#         },
+#         {   
+#             "Label": "Explorer"
+#             "KillType":"window",
+#             "case":"C:\\Windows\\explorer.exe",
+#             "WhiteList":[],
+#             "TestTarget":"path",
+#             "BlackListpath":["blackList.json","Urls"],
+#             "BlockTarget":"explorerPath"
+#         }
+        
+#     ]} 

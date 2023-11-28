@@ -1,15 +1,17 @@
 # import components/componentutils
 from guizero import  Text, Box, Window
-from .components import create_new_window, schedule_show
+from .components import create_new_window, schedule_show, blackList_show
 from .component_utils import RunStop, Scheduler
 from utils.JsonManipulators import ReadSchedule, addBreak
 def add_settings_window(parent):
 #  create a window usint create_new_window from components, using app as the parent "settings" "edit"
     add_settings_window = create_new_window(parent, "Settings", "edit")
     add_settings_window.height = 1200
-    add_settings_window.width = 500
+    add_settings_window.width = 1000
+
     schedule = Scheduler()
     schedule_show(add_settings_window, schedule)
+    blackList_show(add_settings_window)
     Text(add_settings_window, text="", size=10)
 #  this window will show the current times from the json file for the next week, days off and if there's an active break
 

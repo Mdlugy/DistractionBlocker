@@ -1,7 +1,7 @@
 import threading
 import time
 from datetime import datetime, timedelta
-from utils.JsonManipulators import ReadSchedule, addBreak, writeJson
+from utils.JsonManipulators import ReadSchedule, addBreak, writeJson,ReadBlackList
 
 def is_time_between(current_time_str, start_time_str, end_time_str):
     current_time = datetime.strptime(current_time_str, "%H:%M:%S").time()
@@ -211,6 +211,7 @@ class TimeBox:
     def remove_break(self):
         addBreak(0)
         self.get_break_time()
+        
 class ListUpdater:
     def __init__(self):
         self.callback = None
@@ -374,8 +375,43 @@ def update_break_left():
     if break_seconds > 0:
         addBreak(break_seconds-1)
         
-
-       
+class BlackList:
+    def __init__(self):
+        self.paths = []
+        self.titles = []
+        self.FolderPaths = []
+        self.Urls = []
+        self.specialCases = []
+        self.read_blacklist()
+        
+    def read_blacklist(self):
+        blacklist = ReadBlackList()
+        self.paths = blacklist['paths']
+        self.titles = blacklist['titles']
+        self.FolderPaths = blacklist['FolderPaths']
+        self.Urls = blacklist['Urls']
+        self.SpecialCases = blacklist['SpecialCases']
+        
+    def get_category(self,categoryName):
+        print(categoryName)
+        if categoryName=="SpecialCases":          
+            labelList = []
+            for item in self.SpecialCases:
+                labelList.append(item['Label'])
+        else:
+            labelList = self.__dict__[categoryName]
+        print(labelList)
+        return labelList
+    def remove_blacklist_item(self,categoryName, label):
+        if categoryName=="SpecialCases":
+            for item in self.SpecialCases:
+                if item['Label'] == label:
+                    self.SpecialCases.remove(item)
+        else:
+            self.__dict__[categoryName].remove(label)
+        BlackList = ReadBlackList()
+        BlackList[categoryName] = self.__dict__[categoryName]
+        writeJson('blackList.json', blacklist)
 # here I'll include some variatons of the update_text function that may require specific match cases/if else statements, formatting, etc. 
  
 # base case where we simply update the text of the component 
@@ -392,6 +428,5 @@ def update_hidden_box(component, value):
         component.show()
     else:
         component.hide()
-
 
 
