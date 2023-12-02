@@ -14,7 +14,7 @@ BGcolors = {
     "util_edit": "#7096b8",
     "util_edit_header": "#3c5c7c",
     "util_edit_button": "#3c5c7c",
-    
+    "input_box": "#ffffff",
     # "info": "#17a2b8",
     # "light": "#f8f9fa",
     # "dark": "#343a40"
@@ -27,7 +27,8 @@ TextColors = {
     "util_run_header": "#ffffff",
     "util_run_text": "#b88017",
     "util_edit_header": "#40afaf",
-    "util_edit_text": "#3e8db4"
+    "util_edit_text": "#3e8db4",
+    "input_box": "#000000"
 }
 # Define fonts
 fonts = {

@@ -19,11 +19,11 @@ def warnKill(KillTime, killType, hwnd, pid = None):
             return
         kill(killType, hwnd, pid)
 
-def stringChecker(blockedStrings, string):
+def stringChecker(blockedStrings, string, blockme):
         for blockedString in blockedStrings:
             if blockedString in string:
-                return True
-  
+                return not blockme
+        return blockme
         
 def windowCloser():
     
@@ -106,21 +106,17 @@ def windowCloser():
                     blockme = True
                     match blocktarget:
                         case "title":
-                            if stringChecker(whiteList, title):
-                                blockme = False
+                            blockme = stringChecker(whiteList, title, blockme)
                         case "URL":
                             # can only be accessed by chrome
                             url = getChromeAdress(pid)
-                            if stringChecker(whiteList, url):
-                                blockme = False
+                            blockme = stringChecker(whiteList, url,blockme)
                         case "explorerPath":
                             # can only be accessed by windows explorer
                             explorerPath = get_explorer_path(hwnd)
-                            if stringChecker(whiteList, explorerPath):
-                                blockme = False
+                            blockme = stringChecker(whiteList, explorerPath, blockme)
                         case "path":
-                            if stringChecker(whiteList, path):
-                                blockme = False
+                            blockme = stringChecker(whiteList, path,blockme)
                     if not blockme:
                         break
                     else :
@@ -133,25 +129,24 @@ def windowCloser():
                             warnKill(10, specialCase["KillType"], hwnd)
                 elif path and specialCase["case"] in path:
                     blockTarget = specialCase["blockTarget"]
-                    specialCaseBlockList = getList(specialCase["BlackListPath"])
+                    if specialCase["BlackListPath"][0]=="blackList.json":
+                        specialCaseBlockList = getList(specialCase["BlackListPath"])
+                    else :
+                        specialCaseBlockList = specialCase["BlackListPath"]
                     blockme = False
                     match blockTarget:
                         case "title":
-                            if stringChecker(specialCaseBlockList, title):
-                                blockme = True
+                            blockme = stringChecker(specialCaseBlockList, title,blockme)
                         case "URL":
                             url = getChromeAdress(pid)
-                            if stringChecker(specialCaseBlockList, url):
-                                blockme = True                            
+                            blockme = stringChecker(specialCaseBlockList, url,blockme)
                             # this is used only for chrome, other web browsers should be blocked.
                         case "explorerPath":
                             explorerPath = get_explorer_path(hwnd)
-                            if stringChecker(specialCaseBlockList, explorerPath):
-                                blockme = True
+                            blockme = stringChecker(specialCaseBlockList, explorerPath,blockme)
                             # this is used only for windows explorer
                         case "path":
-                            if stringChecker(specialCaseBlockList, path):
-                                blockme = True
+                            blockme = stringChecker(specialCaseBlockList, path,blockme)
                         case _:
                             break
                     if blockme:

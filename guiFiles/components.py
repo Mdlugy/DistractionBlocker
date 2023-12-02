@@ -1,28 +1,13 @@
 import threading
-from guizero import TextBox, Text, PushButton, Box, Window
+from guizero import TextBox, Text, PushButton, Box, Window,ButtonGroup
 from tkinter import Canvas, Scrollbar, Frame, Label
 from .styles import  TextColors, BGcolors,fonts, ButtonPaddings
-from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label,componentUpdater,DisableButton,ListUpdater,datecreator, BlackList
+from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label, componentUpdater,DisableButton,ListUpdater,datecreator, BlackList, wait_for_destruction
 import time 
 
 
-def destroy_widgets(container):
-    for widget in container.children:
-        widget.destroy()
-    return check_widgets_destroyed(container)
 
-def check_widgets_destroyed(container):
-    # Check if all widgets are destroyed
-    return len(container.children) == 0
-
-def wait_for_destruction(container):
-    while not destroy_widgets(container):
-        time.sleep(0.01)  # Wait for a short period before checking again
-    print("succesfully removed widgets")
-    return True
-
-
-
+# Shared Components
 def create_scrollable_list_box(parent_box, items, stylestring, update_callBack, height=200, LabelText=None,  ):
     if LabelText:
         Label(parent_box.tk, text=LabelText, bg=BGcolors[stylestring],fg="white", font=("Arial", 12)).grid(row=0, column=0, sticky="nsew")
@@ -83,7 +68,83 @@ def header_box(parent, heading, pageType):
     Text(header_box, text=heading, color=fg, font=font, size=size, bg=bg    )
     # bottom padding
     Text(header_box, text="", size=padding_size*2, bg=bg)
+
+def create_new_window(parent,title, windowType,disable_creation_button):
+        # app = App(title="Distraction Blocker", layout="auto", bg='lightblue')   
+
+    window = Window(parent,title=title, layout="auto", bg=BGcolors[windowType])
+    header_box(window, title, windowType)
+    Text(window, text="", size=10)
+    disable_creation_button.toggleEnabled()
+    def close_window():
+        disable_creation_button.toggleEnabled()
+        window.destroy()
+    window.when_closed = close_window
+    window.show()
+    return window
+
+
+# Components for the main window
+def create_time_box(parent, time_state, run_stop):
+    outer_box = Box(parent, layout="auto",border=True, align="top", width="fill")
+    outer_box.tk.configure(background=BGcolors["main"])
+    always_visible_box = Box(outer_box, layout="auto",border=True, align="top", width="fill")
+    current_time_box = Box(always_visible_box, layout="auto",border=True,align="left", width="fill")
+    Text(current_time_box, text="Current Time", size=10, align="left")
+    current_time = Text(current_time_box, text=time_state.current_time, size=20,align="right")
+    current_time_updater = componentUpdater(time_state,"current_time", current_time, update_text_simple, run_stop)
+    static_times_box = Box(always_visible_box, layout="auto",border=True, align="right", width="fill")
+    static_time_label=Text(static_times_box, text="Static Time", size=10, align="left")
+    static_time_value = Text(static_times_box, text=time_state.active_static_time, size=20,align="right")
+    static_time_updater_label = componentUpdater(time_state,"waiting_for_start", static_time_label, update_text_static_label, run_stop)
+    static_time_updater_value = componentUpdater(time_state,"active_static_time", static_time_value, update_text_simple, run_stop)
+    break_left_box = Box(outer_box, layout="auto",border=True, align="bottom", width="fill", visible=True)
+    Text(break_left_box, text="Break Left", size=20, )
+    break_left = Text(break_left_box, text=time_state.break_time, size=20, align="right")
+    break_left_updater = componentUpdater(time_state,"break_time_str", break_left, update_text_simple, run_stop)
+    break_box_updater = componentUpdater(time_state,"break_time", break_left_box, update_hidden_box, run_stop)
+    remove_break_button = PushButton(break_left_box, text="End Break", command=time_state.remove_break,align="left")
+    pass
+
+#Components for the schedule section of the settings window
+def schedule_show(parent,schedule):
+    main_box = Box(parent, layout="auto",border=True, align="left")
+    # day_schedule_box(main_box, "Day", "Start", "End")
+    day_schedule_box(main_box, "Monday", schedule,schedule.Monday,parent)
+    day_schedule_box(main_box, "Tuesday", schedule,schedule.Tuesday,parent)
+    day_schedule_box(main_box, "Wednesday", schedule,schedule.Wednesday,parent)
+    day_schedule_box(main_box, "Thursday", schedule,schedule.Thursday,parent)
+    day_schedule_box(main_box, "Friday", schedule,schedule.Friday,parent)
+    day_schedule_box(main_box, "Saturday", schedule,schedule.Saturday,parent)
+    day_schedule_box(main_box, "Sunday", schedule,schedule.Sunday,parent)
+    daysOff_box(main_box, schedule.daysOff, schedule)
     
+def day_schedule_box(parent, day_name,state,day,Parentwindow):
+    def refreshValue(startend):
+        if startend == "start":
+            print('start', day["start"].time)
+            start_time_text.value = f"start-time: {day['start'].time}"
+        else:
+            print('end', day["end"].time)
+            end_time_text.value = f"end-time: {day['end'].time}"
+       
+    def update_day_schedule_box():
+        update_day_schedule(day_name,day, state, Parentwindow,refreshValue, disable_edit_button)
+        
+    day_schedule_box = Box(parent, layout="auto",border=True, align="top", width="fill")
+    Text(day_schedule_box, text=day_name, align="left")
+    start_time_text=Text(day_schedule_box, text=f"start-time: {day["start"].time}" )
+    end_time_text=Text(day_schedule_box, text=f"end-time:{day["end"].time}")
+    edit_button=PushButton(day_schedule_box, text="Edit", command=update_day_schedule_box, align="right")
+    disable_edit_button = DisableButton(edit_button)
+    return day_schedule_box
+
+
+
+
+
+
+
 def update_day_schedule(day_name,day,state,parent,refreshValue,disable_edit_button):
     disable_edit_button.toggleEnabled()
     def close_window():
@@ -115,24 +176,6 @@ def update_day_schedule(day_name,day,state,parent,refreshValue,disable_edit_butt
     timeWindow.when_closed = close_window
     return timeWindow
 
-def day_schedule_box(parent, day_name,state,day,Parentwindow):
-    def refreshValue(startend):
-        if startend == "start":
-            print('start', day["start"].time)
-            start_time_text.value = f"start-time: {day['start'].time}"
-        else:
-            print('end', day["end"].time)
-            end_time_text.value = f"end-time: {day['end'].time}"
-       
-    def update_day_schedule_box_lambda():
-        update_day_schedule(day_name,day, state, Parentwindow,refreshValue, disable_edit_button)
-    day_schedule_box = Box(parent, layout="auto",border=True, align="top", width="fill")
-    Text(day_schedule_box, text=day_name, align="left")
-    start_time_text=Text(day_schedule_box, text=f"start-time: {day["start"].time}" )
-    end_time_text=Text(day_schedule_box, text=f"end-time:{day["end"].time}")
-    edit_button=PushButton(day_schedule_box, text="Edit", command=update_day_schedule_box_lambda, align="right")
-    disable_edit_button = DisableButton(edit_button)
-    return day_schedule_box
 
 def remove_dayOffsOffBox(parent,state,refreshcomponent):
     current_page = 0
@@ -241,7 +284,7 @@ def daysOff_box(parent, daysOff, schedule):
 
     # def refresh_dates_box():
     #     for string in dates:
-    #         if string not in schedule.daysOff:
+    #         if string not in schedule.daysOff:componentUpdater
     #             dates[string].destroy()
     #             del dates[string]
     
@@ -253,17 +296,6 @@ def daysOff_box(parent, daysOff, schedule):
     
     return daysOff_box
 
-def schedule_show(parent,schedule):
-    main_box = Box(parent, layout="auto",border=True, align="left")
-    # day_schedule_box(main_box, "Day", "Start", "End")
-    day_schedule_box(main_box, "Monday", schedule,schedule.Monday,parent)
-    day_schedule_box(main_box, "Tuesday", schedule,schedule.Tuesday,parent)
-    day_schedule_box(main_box, "Wednesday", schedule,schedule.Wednesday,parent)
-    day_schedule_box(main_box, "Thursday", schedule,schedule.Thursday,parent)
-    day_schedule_box(main_box, "Friday", schedule,schedule.Friday,parent)
-    day_schedule_box(main_box, "Saturday", schedule,schedule.Saturday,parent)
-    day_schedule_box(main_box, "Sunday", schedule,schedule.Sunday,parent)
-    daysOff_box(main_box, schedule.daysOff, schedule)
 
 def create_counter(parent,text,timer_val, value ="00",  max_val=100, min_val=0 ):
     counter_box = Box(parent, layout="auto")
@@ -310,50 +342,11 @@ def timer_selector(parent,timer_val):
     create_counter(timer_selector_box,"seconds:",timer_val, "00" ,59)
     return timer_selector_box
     
-def create_new_window(parent,title, windowType):
-        # app = App(title="Distraction Blocker", layout="auto", bg='lightblue')   
-
-    window = Window(parent,title=title, layout="auto", bg=BGcolors[windowType])
-    header_box(window, title, windowType)
-    Text(window, text="", size=10)
-    return window
 
 def create_button(parent, text, command, buttonType, size):
     button = PushButton(parent, text=text, command=command, pady=ButtonPaddings[size]["pady"], padx=ButtonPaddings[size]["padx"])
     button.tk.config(bg=BGcolors[buttonType], fg=TextColors[buttonType+"_text"], font=fonts["button"])
     return button
-def create_time_box(parent, time_state,run_stop):
-    
-    # outer box 
-    outer_box = Box(parent, layout="auto",border=True, align="top", width="fill")
-    outer_box.tk.configure(background=BGcolors["main"])
-    # middle boxes X2 use outer box as parent
-    # 1st middle box is never hidden, top aligned to outer box no border
-    always_visible_box = Box(outer_box, layout="auto",border=True, align="top", width="fill")
-    
-    # inner boxes X2 use 1st middle box 1 as parent
-    # inner box 1 is "current_time", uses state to get time every second it calls the state.update() function left aligned 
-    current_time_box = Box(always_visible_box, layout="auto",border=True,align="left", width="fill")
-    Text(current_time_box, text="Current Time", size=10, align="left")
-    current_time = Text(current_time_box, text=time_state.current_time, size=20,align="right")
-    current_time_updater = componentUpdater(time_state,"current_time", current_time, update_text_simple, run_stop)
-    # Thread(target=update_time, daemon=True).start()
-    # inner box 2 is "static_times", on creation it checks the current time and if its less than time_state.start_time, it will use the start time values for "label" and "time" else it will use the end time values for "label" and "time" right aligned otherwise it uses end_time values
-    static_times_box = Box(always_visible_box, layout="auto",border=True, align="right", width="fill")
-    static_time_label=Text(static_times_box, text="Static Time", size=10, align="left")
-    static_time_value = Text(static_times_box, text=time_state.active_static_time, size=20,align="right")
-    static_time_updater_label = componentUpdater(time_state,"waiting_for_start", static_time_label, update_text_static_label, run_stop)
-    static_time_updater_value = componentUpdater(time_state,"active_static_time", static_time_value, update_text_simple, run_stop)
-    # when the time_state_current time is equal to whatever the static time is, the static time will update to the next time this will use jsonUtils to get the next time to use
-    break_left_box = Box(outer_box, layout="auto",border=True, align="bottom", width="fill", visible=True)
-    Text(break_left_box, text="Break Left", size=20, )
-    break_left = Text(break_left_box, text=time_state.break_time, size=20, align="right")
-    break_left_updater = componentUpdater(time_state,"break_time_str", break_left, update_text_simple, run_stop)
-    break_box_updater = componentUpdater(time_state,"break_time", break_left_box, update_hidden_box, run_stop)
-    remove_break_button = PushButton(break_left_box, text="End Break", command=time_state.remove_break,align="left")
-    # 2nd middle box is "break_left" uses state to get time left, bottom aligned to outer box it is default to hidden, unless there is a value in state.break_time in which case it will be shown it also includes a button which calls state.remove_break() and hides the box
-    # outer box is returned
-    pass
 
 # constant_time_box = Box(times_box, layout="auto",border=True, align="top")
 # current_time_box = Box(constant_time_box, layout="auto",border=True, align="left")
@@ -388,13 +381,13 @@ def blackList_show(parent):
     refresh_special_cases_box = ListUpdater()
     special_cases_box = blackList_category_box(blackList_box, "SpecialCases", blacklist_state,refresh_special_cases_box)
     def create_blackList_edit_window():
-        blackList_edit_window(parent, disable_edit_button, blacklist_state)
+        blackList_edit_window(parent, disable_edit_button, blacklist_state,refresh_special_cases_box)
     
     edit_button=PushButton(blackList_box, text="Edit", command=create_blackList_edit_window, align="bottom")
     disable_edit_button = DisableButton(edit_button)
     return blackList_box
 
-def blackList_edit_window(parent, disable_edit_button, blacklist_state):
+def blackList_edit_window(parent, disable_edit_button, blacklist_state, refresh_special_cases_box):
     blackList_edit_window = create_new_window(parent, "Edit Blacklist", "util_edit")
     blackList_edit_window.height = 750
     blackList_edit_window.width = 500
@@ -403,16 +396,36 @@ def blackList_edit_window(parent, disable_edit_button, blacklist_state):
     top_top = Box(top, layout="auto", border=True, align="top", width="fill", height="fill")
     top_bottom = Box(top, layout="auto", border=True, align="bottom", width="fill", height="fill")
     bottom = Box(body, layout="auto", border=True, align="bottom", width="fill", height="fill")
-
     pathsBox= create_blackList_edit_box(top_top, "paths", blacklist_state,"left" )
     titlesBox= create_blackList_edit_box(top_top, "titles", blacklist_state,"right" )
     
     folderPathsBox= create_blackList_edit_box(top_bottom, "FolderPaths", blacklist_state,"left" )
     urlsBox= create_blackList_edit_box(top_bottom, "Urls", blacklist_state,"right" )
-    
+    choice = ButtonGroup(bottom, options=["SpecialCases", "standard"], selected="SpecialCases")
+    addItem = add_blackList_item_box(bottom, choice.value, blacklist_state, refresh_special_cases_box)
+    current_choice = "SpecialCases"
+    def add_blackList_item():
+        nonlocal current_choice
+        if current_choice =="SpecialCases":
+            current_choice = "standard"
+        else:
+            current_choice = "SpecialCases"
+        print(current_choice)
+        # choice._selected = current_choice
+        nonlocal addItem
+        addItem.destroy()
+        nonlocal choice
+        choice.destroy()
+        choice = ButtonGroup(bottom, options=["SpecialCases", "standard"], selected=current_choice)
+        addItem = add_blackList_item_box(bottom, current_choice, blacklist_state, refresh_special_cases_box)
+        choice.when_clicked=add_blackList_item
+
+        # choice._selected = choice_value
+    choice.when_clicked=add_blackList_item
     blackList_edit_window.show()
     
 def create_blackList_edit_box(parent, category, blacklist_state, align_pos):
+    print(category)
     category_box = Box(parent, layout="auto",border=True, width="fill", height="fill", align= align_pos)
     category_text=Text(category_box, text=category, size=10, font="Arial", align="top")
     itemList = blacklist_state.get_category(category)
@@ -423,11 +436,61 @@ def create_blackList_edit_box(parent, category, blacklist_state, align_pos):
         create_blackList_edit_item_box(category_box, item,removeItem) 
         
     return category_box
-def create_blackList_edit_item_box(parent, item, remove_blackList_item_callback):
+def create_blackList_edit_item_box(parent, item, remove_blackList_item_callback=None):
     item_box = Box(parent, layout="auto",border=True, align="top", width="fill")
     Text(item_box, text=item, size=10, font="Arial", align="left")
     remove_button = PushButton(item_box, text="remove", command=remove_blackList_item_callback,align="right")
-    
+
+
+def add_blackList_item_box(parent, category, blacklist_state, refreshcomponent):
+    add_blackList_item_box = Box(parent, layout="auto",border=True, align="left", width="fill")
+    if category == "SpecialCases":
+        label = Text(add_blackList_item_box, text="Special Case", size=10, font="Arial", align="left")
+        # input_box_label = Box(add_blackList_item_box, layout="auto",border=True, align="top", width="fill")
+        # Text(input_box_label, text="Label", size=10, font="Arial", align="left")
+        # input_box_label = Box(add_blackList_item_box, layout="auto",border=True, align="top", width="fill")
+        # kill_type_box = Box(input_box_label, layout="auto",border=True, align="left", width="fill")
+        # Text(kill_type_box, text="Kill Type", size=10, font="Arial", align="left")
+        # kill_type_choice = ButtonGroup(kill_type_box, options=["exe", "window"], selected="exe")
+        # target_box = Box(input_box_label, layout="auto",border=True, align="right", width="fill")
+        # Text(target_box, text="target", size=10, font="Arial", align="left")
+        # target = TextBox(case_box, text="", align="right")
+        # test_target_box = Box(input_box_label, layout="auto",border=True, align="right", width="fill")
+        # Text(test_target_box, text="test target", size=10, font="Arial", align="left")
+        # test_target_choice = ButtonGroup(test_target_box, options=["path", "title"], selected="path")
+        # white_or_blacklist_box = Box(input_box_label, layout="auto",border=True, align="right", width="fill")
+        # Text(white_or_blacklist_box, text="whitelist or blacklist exceptions", size=8, font="Arial", align="left")
+        # white_or_blacklist_choice = ButtonGroup(white_or_blacklist_box, options=["whitelist", "blacklist"], selected="whitelist")
+        # if white_or_blacklist_box.value=="whitelist":
+        #     whitelist_box = Box(input_box_label, layout="auto",border=True, align="right", width="fill")
+        #     Text(whitelist_box, text="whitelist", size=10, font="Arial", align="left")
+        #     Text(whitelist_box, text="please comma seperate exceptions", size=7, font="Arial", align="left")
+        #     whitelist = TextBox(whitelist_box, text="", align="right")
+        # else:
+        #     blacklist_box = Box(input_box_label, layout="auto",border=True, align="right", width="fill")
+        #     Text(blacklist_box, text="blacklist", size=10, font="Arial", align="left")
+        #     existing_list_or_array_box = Box(blacklist_box, layout="auto",border=True, align="right", width="fill")
+        #     Text(existing_list_or_array_box, text="comma separated List, or existing list", size=8, font="Arial", align="left")
+        #     existing_list_or_array_choice = ButtonGroup(existing_list_or_array_box, options=["new", "existing"], selected="list")           
+        #     if existing_list_or_array_box.value=="new":
+        #         Text(blacklist_box, text="please comma seperate exceptions", size=7, font="Arial", align="left")
+        #         blacklist = TextBox(blacklist_box, text="", align="right")
+        #     else:
+        #         blacklist = ButtonGroup(blacklist_box, options=["FolderPaths", "Urls","paths","titles"], selected="FolderPaths")
+        # block_target_box = Box(input_box_label, layout="auto",border=True, align="right", width="fill")
+        # Text(block_target_box, text="block target", size=10, font="Arial", align="left")
+        # block_target_choice = ButtonGroup(block_target_box, options=["URL", "title","explorerPath","path"], selected="URL")
+    else:
+        label = Text(add_blackList_item_box, text=category, size=10, font="Arial", align="left")
+        input_box_label = Box(add_blackList_item_box, layout="auto",border=True, align="top", width="fill")
+        blockType_choice = ButtonGroup(input_box_label, options=["FolderPaths", "Urls","paths","titles"], selected="FolderPaths")
+        Text(input_box_label, text="enter blocklist item here", size=10, font="Arial", align="left")
+        blocklist_item = TextBox(input_box_label, text="", align="right")
+    def submit():
+        refreshcomponent.callCallback()
+        print ("test")
+    submit_button = PushButton(add_blackList_item_box, text="submit", command=submit,align="right")
+    return add_blackList_item_box
     #                           BlackList Edit Window
     #                        Paths:              Titles:   
     

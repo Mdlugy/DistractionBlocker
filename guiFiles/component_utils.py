@@ -2,6 +2,24 @@ import threading
 import time
 from datetime import datetime, timedelta
 from utils.JsonManipulators import ReadSchedule, addBreak, writeJson,ReadBlackList
+def destroy_widgets(container, tk_or_guizero):
+    if tk_or_guizero == "tk":
+        for widget in container.winfo_children():
+            widget.destroy()
+        return check_widgets_destroyed(container)
+    for widget in container.children:
+        widget.destroy()
+    return check_widgets_destroyed(container)
+
+def check_widgets_destroyed(container):
+    # Check if all widgets are destroyed
+    return len(container.children) == 0
+
+def wait_for_destruction(container, tk_or_guizero="guizero"):
+    while not destroy_widgets(container, tk_or_guizero):
+        time.sleep(0.01)  # Wait for a short period before checking again
+    print("succesfully removed widgets")
+    return True
 
 def is_time_between(current_time_str, start_time_str, end_time_str):
     current_time = datetime.strptime(current_time_str, "%H:%M:%S").time()
@@ -428,5 +446,3 @@ def update_hidden_box(component, value):
         component.show()
     else:
         component.hide()
-
-
