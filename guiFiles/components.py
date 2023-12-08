@@ -3,12 +3,13 @@ from guizero import TextBox, Text, PushButton, Box, Window,ButtonGroup
 from tkinter import Canvas, Scrollbar, Frame, Label
 from .styles import  TextColors, BGcolors,fonts, ButtonPaddings
 from .component_utils import increment, decrement, validate_int, validate_value, TimeBox, update_text_simple, update_hidden_box,update_text_static_label, componentUpdater,DisableButton,ListUpdater,datecreator, BlackList, wait_for_destruction
+from functools import partial
 import time 
 
 
 
 # Shared Components
-def create_scrollable_list_box(parent_box, items, stylestring, update_callBack, height=200, LabelText=None,  ):
+def create_scrollable_list_box(parent_box, items, stylestring, update_callBack, height=200, LabelText=None):
     if LabelText:
         Label(parent_box.tk, text=LabelText, bg=BGcolors[stylestring],fg="white", font=("Arial", 12)).grid(row=0, column=0, sticky="nsew")
 
@@ -42,10 +43,11 @@ def create_scrollable_list_box(parent_box, items, stylestring, update_callBack, 
     frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
 
     # Store the rebuild function in the callback
-    update_callBack.setCallback(rebuild_content)
+    callbackname = "scrollableListBox"
+    if LabelText:
+        callbackname = f"{LabelText}_scrollableListBox"
+    update_callBack.setCallback('scrollableListBox',rebuild_content)
     rebuild_content()
-
-
 
 def header_box(parent, heading, pageType):
     padding_size = 5 
@@ -83,7 +85,6 @@ def create_new_window(parent,title, windowType,disable_creation_button):
     window.show()
     return window
 
-
 # Components for the main window
 def create_time_box(parent, time_state, run_stop):
     outer_box = Box(parent, layout="auto",border=True, align="top", width="fill")
@@ -104,9 +105,10 @@ def create_time_box(parent, time_state, run_stop):
     break_left_updater = componentUpdater(time_state,"break_time_str", break_left, update_text_simple, run_stop)
     break_box_updater = componentUpdater(time_state,"break_time", break_left_box, update_hidden_box, run_stop)
     remove_break_button = PushButton(break_left_box, text="End Break", command=time_state.remove_break,align="left")
-    pass
 
 #Components for the schedule section of the settings window
+
+
 def schedule_show(parent,schedule):
     main_box = Box(parent, layout="auto",border=True, align="left")
     # day_schedule_box(main_box, "Day", "Start", "End")
@@ -138,6 +140,32 @@ def day_schedule_box(parent, day_name,state,day,Parentwindow):
     edit_button=PushButton(day_schedule_box, text="Edit", command=update_day_schedule_box, align="right")
     disable_edit_button = DisableButton(edit_button)
     return day_schedule_box
+
+
+
+
+
+
+
+
+
+
+
+
+def daysOff_box(parent, daysOff, schedule):
+    refresh_dates_box = ListUpdater()
+    
+    def update_daysOff_box_creator():
+        update_daysOff(parent, schedule,refresh_dates_box,disable_edit_button)
+
+    daysOff_box = Box(parent, layout="auto",border=True, align="right", width="fill")
+    label = Text(daysOff_box, text="Days Off", size=14, font="Arial", align="top")
+    dates_box = Box(daysOff_box, layout="auto",border=True, align="top", width="fill")
+    create_scrollable_list_box(dates_box, daysOff, "util_edit", refresh_dates_box)
+    edit_button=PushButton(daysOff_box, text="Edit", command=update_daysOff_box_creator, align="top")
+    disable_edit_button = DisableButton(edit_button)
+
+    return daysOff_box
 
 
 
@@ -187,6 +215,7 @@ def remove_dayOffsOffBox(parent,state,refreshcomponent):
     removeDaysOffBox = Box(parent, layout="auto",border=True, align="top",width="fill")
     dayBoxes={}
     def createDayBoxpage(parentBox, dayOff, pageNumber):
+        refreshcomponent.setCallback("refreshDaysOff", partial(createDayBoxpage, parentBox, dayOff, pageNumber), True)
         nonlocal current_page
         wait_for_destruction(parentBox)
         # for widget in parentBox.children:
@@ -208,7 +237,6 @@ def remove_dayOffsOffBox(parent,state,refreshcomponent):
             dayBoxButton = PushButton(daybox, text="remove", command=lambda dayOff=dayOff: remove_dayOff(dayOff),align="right")
             Text(daybox, text=dayOff, align="left")
             dayBoxes[dayOff] = daybox 
-            
     def updateNavigationButtons():
         nonlocal totalPages
         totalPages = len(state.daysOff)/6
@@ -229,7 +257,7 @@ def remove_dayOffsOffBox(parent,state,refreshcomponent):
     def remove_dayOff(day):
         print(day)
         state.remove_day_off(day)
-        refreshcomponent.callCallback()
+        refreshcomponent.callAllCallbacks()
 
         keys_to_check = list(dayBoxes.keys())
         for day_key in keys_to_check:
@@ -237,7 +265,7 @@ def remove_dayOffsOffBox(parent,state,refreshcomponent):
                 box = dayBoxes[day_key]
                 box.destroy()
                 del dayBoxes[day_key]
-                refreshcomponent.callCallback()
+                refreshcomponent.callAllCallbacks()
         nonlocal totalPages
         totalPages = len(state.daysOff) // 10
         nonlocal current_page
@@ -262,39 +290,17 @@ def addDayOffBox(parent,state,refreshcomponent):
         date = date_val.date
         print("day to add",date)
         state.add_day_off(date)
-        refreshcomponent.callCallback()
+        refreshcomponent.callAllCallbacks()
     PushButton(add_dayOff_box, text= "Add", command=add_dayOff, align="right")
     
     
-def update_daysOff(parent,state,refreshcomponent):
-    daysOffWindow = create_new_window(parent, "Days Off", "util_edit")
+def update_daysOff(parent,state,refreshcomponent, disable_edit_button):
+    daysOffWindow = create_new_window(parent, "Days Off", "util_edit", disable_edit_button)
     daysOffWindow.height = 750
     daysOffWindow.width = 500
     
     remove_dayOffsOffBox(daysOffWindow,state,refreshcomponent)
     addDayOffBox(daysOffWindow,state,refreshcomponent)
-def daysOff_box(parent, daysOff, schedule):
-    refresh_dates_box = ListUpdater()
-    def update_daysOff_box_creator():
-        update_daysOff(parent, schedule,refresh_dates_box)
-    # dates={}
-    # def createList(parentBox, daysOff):
-    #     for string in daysOff:
-    #         dates[string] = Text(parentBox, text=string, size=14, font="Arial", align="top")
-
-    # def refresh_dates_box():
-    #     for string in dates:
-    #         if string not in schedule.daysOff:componentUpdater
-    #             dates[string].destroy()
-    #             del dates[string]
-    
-    daysOff_box = Box(parent, layout="auto",border=True, align="right", width="fill")
-    label = Text(daysOff_box, text="Days Off", size=14, font="Arial", align="top")
-    dates_box = Box(daysOff_box, layout="auto",border=True, align="top", width="fill")
-    create_scrollable_list_box(dates_box, daysOff, "util_edit", refresh_dates_box)
-    edit_button=PushButton(daysOff_box, text="Edit", command=update_daysOff_box_creator, align="top")
-    
-    return daysOff_box
 
 
 def create_counter(parent,text,timer_val, value ="00",  max_val=100, min_val=0 ):
@@ -487,7 +493,7 @@ def add_blackList_item_box(parent, category, blacklist_state, refreshcomponent):
         Text(input_box_label, text="enter blocklist item here", size=10, font="Arial", align="left")
         blocklist_item = TextBox(input_box_label, text="", align="right")
     def submit():
-        refreshcomponent.callCallback()
+        refreshcomponent.callAllCallbacks()
         print ("test")
     submit_button = PushButton(add_blackList_item_box, text="submit", command=submit,align="right")
     return add_blackList_item_box

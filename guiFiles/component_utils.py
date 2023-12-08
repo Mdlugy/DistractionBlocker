@@ -230,14 +230,32 @@ class TimeBox:
         addBreak(0)
         self.get_break_time()
         
+        
+        # utility class which is populated with callback functions for building components derived from lists. when the list is updated, the callback function is called which updates the component to he most recent state. 
 class ListUpdater:
     def __init__(self):
         self.callback = None
-    def setCallback(self,callbackFunction):
-        self.callback = callbackFunction
-    def callCallback(self):
-        self.callback()
-
+    def setCallback(self,name,callbackFunction,overwr=False):
+        callbacksdict = self.callback
+        if callbacksdict == None:
+            callbacksdict = {}
+        if callbacksdict.get(name) != None:                
+            while not overwr:
+                name = name + "1"
+                if callbacksdict.get(name) == None:
+                    break
+            if overwr:
+                callbacksdict[name] = callbackFunction
+        callbacksdict[name] = callbackFunction
+        self.callback = callbacksdict
+        
+    def callCallback(self, name):
+        self.callback[name]()
+        
+    def callAllCallbacks(self):
+        for callback in self.callback.values():
+            callback()
+            
 class componentUpdater:
     def __init__(self, state,target_attribute, component, update_function, runstop):
         self.state=state
