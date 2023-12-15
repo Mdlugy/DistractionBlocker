@@ -1,7 +1,7 @@
 # import components/componentutils
 from guizero import  Text, Box, Window
 from .components import create_new_window, schedule_show, blackList_show
-from .component_utils import RunStop, Scheduler
+from .component_utils import Run_Stop, Scheduler
 from utils.JsonManipulators import ReadSchedule, addBreak
 
 def add_settings_window(parent,disable_creation_button):

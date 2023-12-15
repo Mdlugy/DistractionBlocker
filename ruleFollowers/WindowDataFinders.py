@@ -1,6 +1,6 @@
 from pywinauto.application import Application
 from utils.windll32 import windll_32
-from ctypes import wintypes, windll, create_unicode_buffer,c_uint, c_int,byref
+from ctypes import create_unicode_buffer
 from utils.getPId import getPidFromWindow
 import psutil
 

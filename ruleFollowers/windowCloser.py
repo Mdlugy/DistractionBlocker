@@ -1,16 +1,9 @@
-from typing import Optional
 from datetime import datetime,timedelta
-import threading
-import pyKey
 import time 
-import psutil
-import win32process
-import win32gui
-import win32com
 from .createMessage import warningMessage
 from .exeBlocker import kill
-from .WindowDataFinders import getTextFromWindow, getForegroundWindowPid, getForegroudWindowPath, getForegroundWindowTitle, get_explorer_path, getHwnd
-from utils.JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak,ReadJSON,getList
+from .WindowDataFinders import getForegroundWindowPid, getForegroudWindowPath, getForegroundWindowTitle, get_explorer_path, getHwnd,getChromeAdress
+from utils.JsonManipulators import ReadBlackList, ReadSchedule, removeBreak, removeDayOff, isBreak,getList
 
 def warnKill(KillTime, killType, hwnd, pid = None):
         warningMessage(KillTime, killType, hwnd)
@@ -20,13 +13,13 @@ def warnKill(KillTime, killType, hwnd, pid = None):
         kill(killType, hwnd, pid)
 
 def stringChecker(blockedStrings, string, blockme):
+    
         for blockedString in blockedStrings:
             if blockedString in string:
                 return not blockme
         return blockme
         
-def windowCloser():
-    
+def windowCloser(control):
     Schedule = ReadSchedule()
     breakLeft = Schedule["break"]
     fiveMinuteWarning = False
@@ -41,7 +34,7 @@ def windowCloser():
         removeBreak(Schedule)
     timefromepoch = time.time()
     BlackList = ReadBlackList()
-    specialCases = BlackList["specialCases"]
+    specialCases = BlackList["SpecialCases"]
     
     
     today = datetime.now().strftime("%m/%d/%Y")
@@ -71,15 +64,36 @@ def windowCloser():
         tomorrow = (datetime.today() + timedelta(days=1)).strftime('%A')
         # sleep until the start time of tomorrow
         time.sleep((datetime.strptime(Schedule[tomorrow]["start"], "%H:%M:%S") - datetime.strptime(now, "%H:%M:%S")).total_seconds()+86400)
+    while control.is_alive:
+        try:
+            windowCloserLoop(fiveMinuteWarning, breakOverrideTime, timefromepoch, BlackList, specialCases, control)
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt")
+            return
+        except:
+            time.sleep(1)
+            windowCloserLoop(fiveMinuteWarning, breakOverrideTime, timefromepoch, BlackList, specialCases)
+    # except:   
+    #     # sometimes windows acts up and the window closer loop crashes, this is a failsafe to make sure that the program doesn't crash. 
+    #     # it seems like the crashes mostly occur when a user is closing a window while that window is being checked against the blacklist.
+    #     time.sleep(1)
+    #     return windowCloserLoop(fiveMinuteWarning, breakOverrideTime, timefromepoch, BlackList, specialCases)
     
-    while True:
+def windowCloserLoop(fiveMinuteWarning, breakOverrideTime, timefromepoch, BlackList, specialCases, control): 
+    Schedule = ReadSchedule()
+    weekday = datetime.now().strftime("%A")
+    exitTime = Schedule[weekday]["end"]
+    while control.is_alive:
+        print(control.is_alive)
         hwnd = getHwnd()
         title = getForegroundWindowTitle()
         path = getForegroudWindowPath(hwnd)
         print(title)
         print(path)
         pid = getForegroundWindowPid(hwnd)[-1]
-        if stringChecker(BlackList["paths"],path):
+        # blockme  is used to check if the process is being checked against a blacklist or a whitelist. If it's set to true, then the process is being checked against a whitelist, if it's set to false, then the process is being checked against a blacklist. 
+        blockme = False
+        if stringChecker(BlackList["paths"],path,blockme):
             if fiveMinuteWarning:
                 if time.time()-timefromepoch<breakOverrideTime:
                     breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
@@ -88,7 +102,7 @@ def windowCloser():
                 warnKill(10, "exe", hwnd, pid)
             fiveMinuteWarning=False
         
-        if stringChecker(BlackList["titles"],title):
+        if stringChecker(BlackList["titles"],title,blockme):
             if fiveMinuteWarning:
                 if time.time()-timefromepoch<breakOverrideTime:
                     breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
@@ -97,7 +111,7 @@ def windowCloser():
                 warnKill(10, "exe", hwnd)
             fiveMinuteWarning=False
         for specialCase in specialCases:         
-            if specialCase["testTarget"]=="path":
+            if specialCase["TestTarget"]=="path":
                 if path and specialCase["case"] != path:
                     break
                 if len(specialCase["whiteList"])>0:
@@ -157,81 +171,9 @@ def windowCloser():
                                 warnKill(breakOverrideTime, specialCase["KillType"], hwnd)
                         else:
                             warnKill(10, specialCase["KillType"], hwnd)
-                    
-
-        
-        # if path =="C:\Windows\explorer.exe":
-        #     print("explorer")
-        #     explorerPath = get_explorer_path(hwnd)
-        #     print(explorerPath)
-        #     if stringChecker(BlackList["FolderPaths"], explorerPath):   
-        #         if fiveMinuteWarning:
-        #             if time.time()-timefromepoch<breakOverrideTime:
-        #                 breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
-        #                 time.sleep(breakOverrideTime)
-        #                     # justwarn(5, "window", hwnd)
-        #             # test to see that the window is still the same
-        #             testHwnd = getHwnd()
-        #             if testHwnd == hwnd:
-        #                 testpath = getForegroudWindowPath(testHwnd)
-        #                 if testpath == path:
-        #                     kill("window", hwnd)
-        #                     break                  
-        # for pathStart in BlackList["paths"]:
-        #     pid = getForegroundWindowPid(hwnd)[-1]
-        #     if path.startswith(pathStart):
-        #         if fiveMinuteWarning==True:
-        #             if time.time()-timefromepoch<breakOverrideTime:
-        #                 breakOverrideTime = breakOverrideTime - (time.time()-timefromepoch)
-        #                 warnKill(breakOverrideTime, "exe", hwnd, pid)
-        #         else:
-        #             warnKill(10, "exe", hwnd, pid)
-        #         fiveMinuteWarning=False
-        #         break
-                    # get the specialCaseBlockList and BlockTarget
         time.sleep(1)
+        now = datetime.now().strftime("%H:%M:%S")
+        if now > exitTime:
+            return windowCloser(control)
         if isBreak():
-            return windowCloser()
-        
-
-                    
-#     if path == 'C:\Windows\explorer.exe':
-#         hwnd = windll_32.GetForegroundWindow()
-#         path = getTextFromWindow(get_explorer_path(hwnd))
-#         print (path)
-#         time.sleep(3)
-#         continue
-#     if type(title) == None:
-#         time.sleep(3)
-#         continue
-#     if type(path) == None:
-#         time.sleep(3)
-#         continue
-#     print(title)
-#     print(path)
-#     if ("Visual" in getForegroundWindowTitle()):
-#         pid = getForegroundWindowPid()
-#         print('here')
-#         warningMessage(10)
-#         print(pid)
-#         # time.sleep(10)
-#         # if getForegroundWindowPid() == pid:
-#             # kill_process(pid[-1])
-#     time.sleep(3)
-# # import win32gui, win32con, win32process
-# # from ctypes import windll
-# # from time import sleep
-# # sleep(5)
-# # create a new tinkter window
-# hwnd = int(eval(<toplevel>.wm_frame()))	# Get the window info from the window manager
-# hwnd = int(eval(TestWindow.wm_frame())) # Get the window info from the window manager
-# win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-# win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-# 
-# exes to consider:
-# LariLauncher
-
-
-
-# p = psutil.Process(pid)
-# p.terminate()
+            return windowCloser(control)

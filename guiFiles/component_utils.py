@@ -69,8 +69,17 @@ def decrement(str, max_val, min_val):
     num -= 1
     num = validate_value(num,max_val,min_val )
     return num
+
+# a class which creates a stateful boolean which can be passed into the core logic of the windowcloser, windowWatcher etc functions to close those threads cleanly.
+class control_threads:
+    def __init__(self):
+        self.is_alive = True
+    def stop(self):
+        self.is_alive = False
+    
+        
 # a utility class that'll be passed into any classes that run treaded processes to trigger a stop from the main thread
-class RunStop:
+class Run_Stop:
     def __init__(self):
         self.run = True
         self.processes = []
@@ -98,9 +107,7 @@ class RunStop:
                 process.join()  # Ensure all threads are joined
             app.destroy()
         threading.Thread(target=wait_and_close, daemon=True).start()
-
-
-        
+       
 # a Class for storing the state of the break being set. might be refactored and extended to be re-used for other time objects 
 class TimeBase:
     def __init__(self):
@@ -163,10 +170,10 @@ class DisableButton:
     
 # a larget state object used for TimeBox components.
 class TimeBox:
-    def __init__(self, runstop):
+    def __init__(self, run_stop):
         # current time initialization and thread
         self.current_time = None
-        self.runstop = runstop
+        self.run_stop = run_stop
         self.update_thread = threading.Thread(target=self.update_times, daemon=True)
         self.update_thread.start()
         # getting the start/stop time, the active start/stop time will be set to "active_static_time", if the active_start_time is "start", waiting_for_start will be set to true
@@ -176,14 +183,14 @@ class TimeBox:
         self.get_static_times()
         self.break_time = None
         self.get_break_time()
-        self.runstop.addProcess(self.update_thread)
+        self.run_stop.addProcess(self.update_thread)
         self.break_time_str=""
     def stop(self):
-        self.runstop.markForJoin(self.update_thread)
+        self.run_stop.markForJoin(self.update_thread)
 
     def update_times(self):
         counter = 0
-        while self.runstop.run:
+        while self.run_stop.run:
             if counter % 100 == 0:
                 now = datetime.now()
                 self.current_time = now.strftime("%H:%M:%S")
@@ -257,7 +264,7 @@ class ListUpdater:
             callback()
             
 class componentUpdater:
-    def __init__(self, state,target_attribute, component, update_function, runstop):
+    def __init__(self, state,target_attribute, component, update_function, run_stop):
         self.state=state
         self.target_attribute = target_attribute
         self.component = component
@@ -272,7 +279,7 @@ class componentUpdater:
             time.sleep(0.1)
             
     def stop(self):
-        self.runstop.markForJoin(self.update_thread)
+        self.run_stop.markForJoin(self.update_thread)
 class datecreator:
     def __init__(self):
         self.date = None

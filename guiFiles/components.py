@@ -1,4 +1,3 @@
-import threading
 from guizero import TextBox, Text, PushButton, Box, Window,ButtonGroup
 from tkinter import Canvas, Scrollbar, Frame, Label
 from .styles import  TextColors, BGcolors,fonts, ButtonPaddings
@@ -186,7 +185,7 @@ def update_day_schedule(day_name,day,state,parent,refreshValue,disable_edit_butt
         refreshValue("end")
         
     
-    timeWindow = create_new_window(parent, f"schedule for {day_name}", "util_edit")
+    timeWindow = create_new_window(parent, f"schedule for {day_name}", "util_edit",disable_edit_button)
     start_time_box = Box(timeWindow, layout="auto",border=True, align="top", width="fill")
     Text(start_time_box, text="start time:", align="left")
     startTime = day["start"]
