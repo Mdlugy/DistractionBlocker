@@ -81,13 +81,13 @@ BlackList Setup
                             "BlockTarget":"explorerPath"
                         }
                     ] 
-    Running
-    either run main.py in the terminal or click on main.bat
+Running
+either run main.py in the terminal or click on main.bat
 
-    Breaks
-    to take a break click the "add a break" button and set how long of a break you'd like to take, then click submit. 5 minutes before the break ends, if you are running a blocked program a popup window will show up that warns you that a break will end in 5 minutes, at which time that window will be closed by the program. 
+Breaks
+to take a break click the "add a break" button and set how long of a break you'd like to take, then click submit. 5 minutes before the break ends, if you are running a blocked program a popup window will show up that warns you that a break will end in 5 minutes, at which time that window will be closed by the program. 
 
 
-    Days Off
-    the program is setup to run every day with schedules set by days of the week. If you'd like to keep the program running in the background, but have it be inactive, please add the date you'd like it to turn off either through the gui or by editing the scheduler.json. 
+Days Off
+the program is setup to run every day with schedules set by days of the week. If you'd like to keep the program running in the background, but have it be inactive, please add the date you'd like it to turn off either through the gui or by editing the scheduler.json. 
 
