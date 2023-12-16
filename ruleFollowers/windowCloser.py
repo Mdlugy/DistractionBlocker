@@ -72,7 +72,7 @@ def windowCloser(control):
             return
         except:
             time.sleep(1)
-            windowCloserLoop(fiveMinuteWarning, breakOverrideTime, timefromepoch, BlackList, specialCases)
+            windowCloserLoop(fiveMinuteWarning, breakOverrideTime, timefromepoch, BlackList, specialCases,control)
     # except:   
     #     # sometimes windows acts up and the window closer loop crashes, this is a failsafe to make sure that the program doesn't crash. 
     #     # it seems like the crashes mostly occur when a user is closing a window while that window is being checked against the blacklist.
