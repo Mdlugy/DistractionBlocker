@@ -3,10 +3,10 @@ from utils.JsonManipulators import addBreak
 from .component_utils import CountDownTimer
 # creating a class to store the state of the CountDownTimer
 
-def create_break_Window(parent,creationButtonShown, time_state):
-    creationButtonShown.toggleEnabled()
+def create_break_Window(parent,creationButtonShown):
+    # creationButtonShown.toggleEnabled()
     timer_val = CountDownTimer(addBreak)
-    break_Window = create_new_window(parent,"Add a Break", "util_run")
+    break_Window = create_new_window(parent,"Add a Break", "util_run",creationButtonShown)
 
     timer_selector(break_Window, timer_val)
     def close_window():
