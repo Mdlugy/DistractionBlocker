@@ -13,7 +13,9 @@ def warnKill(KillTime, killType, hwnd, pid = None):
         kill(killType, hwnd, pid)
 
 def stringChecker(blockedStrings, string, blockme):
-    
+    if not string:
+        return blockme
+    else:
         for blockedString in blockedStrings:
             if blockedString in string:
                 return not blockme

@@ -28,7 +28,7 @@ def close():
     app.destroy()
     
 def create_new_break_window():
-    create_break_Window(app,disable_break_button,time_state)
+    create_break_Window(app,disable_break_button)
     
 def create_settings_window():
     add_settings_window(app,disable_settings_button)
