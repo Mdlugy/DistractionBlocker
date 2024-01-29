@@ -2,7 +2,7 @@ from guizero import App, Text, PushButton, Box
 import time
 from datetime import datetime
 from ruleFollowers.windowCloser import windowCloser
-from utils.JsonManipulators import ReadSchedule, addBreak
+from utils.json_manipulators import ReadSchedule, addBreak
 from .components import  header_box,create_time_box
 from .component_utils import DisableButton, Run_Stop, TimeBox, control_threads
 from .add_a_break_window import create_break_Window

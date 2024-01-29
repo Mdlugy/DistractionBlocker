@@ -1,6 +1,6 @@
 import os
 import fnmatch
-from ruleFollowers.JsonManipulators import ReadJSON, writeJson
+from ruleFollowers.JsonManipulators import read_JSON, write_Json
 def find_extensions_in_dir(directory, extensions):
     for extension in extensions:
         print(extension)
@@ -15,7 +15,7 @@ def find_extensions_in_dir(directory, extensions):
                     matched_files.append(file_path)  # Append the full path
         
         # Read existing data if JSON file exists
-        data = ReadJSON(jsonName)
+        data = read_JSON(jsonName)
         if data == None:
             data = []
         # Add new files to the data list
@@ -24,7 +24,7 @@ def find_extensions_in_dir(directory, extensions):
                 data.append(file)
         
         # Write the updated data to the JSON file
-        writeJson(jsonName, data)
+        write_Json(jsonName, data)
     
     # The return statement should be here if you want to return something specific
     return

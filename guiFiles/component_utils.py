@@ -1,7 +1,7 @@
 import threading
 import time
 from datetime import datetime, timedelta
-from utils.JsonManipulators import ReadSchedule, addBreak, writeJson,ReadBlackList
+from utils.json_manipulators import read_schedule, add_break, write_json,read_blacklist
 def destroy_widgets(container, tk_or_guizero):
     if tk_or_guizero == "tk":
         for widget in container.winfo_children():
@@ -148,15 +148,15 @@ class TimeValue(TimeBase):
         super().updateSecond(value)
         self.updateselfTime()
 class CountDownTimer(TimeBase):
-    def __init__(self, addBreak):
+    def __init__(self, add_break):
         super().__init__()
         # self.run_stop = run_stop
-        self.addBreak = addBreak
+        self.add_break = add_break
     def convertToSeconds(self):
         return int(self.timerHour)*3600 + int(self.timerMinute)*60 + int(self.timerSecond)
     def updateBreak(self):
         seconds = self.convertToSeconds()
-        self.addBreak(self.convertToSeconds())
+        self.add_break(self.convertToSeconds())
 
 # a utility class passed into objects created after new windows are open to block the use of the button which creates that window
 class DisableButton:
@@ -205,7 +205,7 @@ class TimeBox:
             
     def get_static_times(self):
         # Load time from JSON file (replace 'your_file.json' with your file path)
-        schedule = ReadSchedule()
+        schedule = read_schedule()
         weekday = datetime.now().strftime("%A")
         today_start = schedule[weekday]['start']
         today_end = schedule[weekday]['end']       
@@ -226,15 +226,15 @@ class TimeBox:
                 i+=1
             self.next_active_static_time = schedule[weekday]['start']        
     def get_break_time(self):
-        schedule = ReadSchedule()
+        schedule = read_schedule()
         self.break_time = schedule['break']
         self.break_time_str =str(timedelta(seconds=self.break_time))
     def update_break(self, seconds):
-        addBreak(seconds)
+        add_break(seconds)
         self.get_break_time()
         
     def remove_break(self):
-        addBreak(0)
+        add_break(0)
         self.get_break_time()
         
         
@@ -357,7 +357,7 @@ class Scheduler :
         self.daysOff = None
         self.read_schedule()
     def read_schedule(self):
-        schedule = ReadSchedule()
+        schedule = read_schedule()
         self.Monday = self.update_day_init(schedule['Monday'])
         self.Tuesday = self.update_day_init(schedule['Tuesday'])
         self.Wednesday = self.update_day_init(schedule['Wednesday'])
@@ -377,15 +377,15 @@ class Scheduler :
             print(f"Removed {day}. Current days off: {self.daysOff}")
         else:
             print(f"{day} not found in days off.")
-        schedule = ReadSchedule()
+        schedule = read_schedule()
         schedule['DaysOff'] = self.daysOff
-        writeJson('scheduler.json', schedule)
+        write_json('scheduler.json', schedule)
         
     def update_sched_val(self, day, part, value):
-        schedule = ReadSchedule()
+        schedule = read_schedule()
         print(value)
         schedule[day][part] = value
-        writeJson('scheduler.json', schedule)
+        write_json('scheduler.json', schedule)
         if part == "start":
             self.__dict__[day]["start"].updateTime(value)
         elif part == "end":
@@ -395,12 +395,12 @@ class Scheduler :
         daysOff.append(val)
         sorted_dates = sorted(set(daysOff), key=lambda x: time.strptime(x, "%m/%d/%Y"))
         self.daysOff=sorted_dates
-        schedule = ReadSchedule()
+        schedule = read_schedule()
         schedule['DaysOff'] = self.daysOff
-        writeJson('scheduler.json', schedule)
+        write_json('scheduler.json', schedule)
         
 def get_break_left():
-    schedule = ReadSchedule()
+    schedule = read_schedule()
     break_left = schedule['break']
     return break_left
     
@@ -416,7 +416,7 @@ def update_break_left():
         break_left.value = ""
         break_left_box.hide()
     if break_seconds > 0:
-        addBreak(break_seconds-1)
+        add_break(break_seconds-1)
         
 class BlackList:
     def __init__(self):
@@ -428,7 +428,7 @@ class BlackList:
         self.read_blacklist()
         
     def read_blacklist(self):
-        blacklist = ReadBlackList()
+        blacklist = read_blacklist()
         self.paths = blacklist['paths']
         self.titles = blacklist['titles']
         self.FolderPaths = blacklist['FolderPaths']
@@ -452,9 +452,9 @@ class BlackList:
                     self.SpecialCases.remove(item)
         else:
             self.__dict__[categoryName].remove(label)
-        BlackList = ReadBlackList()
+        BlackList = read_blacklist()
         BlackList[categoryName] = self.__dict__[categoryName]
-        writeJson('blackList.json', blacklist)
+        write_json('blackList.json', blacklist)
 # here I'll include some variatons of the update_text function that may require specific match cases/if else statements, formatting, etc. 
  
 # base case where we simply update the text of the component 

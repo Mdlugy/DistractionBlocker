@@ -1,1 +1,1 @@
-__all__ = ["windll32","getPId","JsonManipulators","getprocessNames"]
+__all__ = ["windll32","get_pId","json_manipulators","get_process_names"]

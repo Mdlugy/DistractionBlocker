@@ -2,7 +2,7 @@ import time
 import threading
 from utils.windll32 import windll_32
 from datetime import timedelta
-from .WindowDataFinders import getHwnd
+from .window_data_finders import get_hwnd
 # from utils.bringToFront import bring_to_front
 
 
@@ -24,7 +24,7 @@ def worker3(hwnd,finished_event):
     windll_32.ShowWindow(hwnd,9)
     return
 
-def AutoCloseMessageBoxW(text, title, close_until_seconds, handle=None):
+def auto_close_message_box_window(text, title, close_until_seconds, handle=None):
     close_event = threading.Event()
     finished_event = threading.Event()
     t1 = threading.Thread(target=worker1,args=(title,close_event,close_until_seconds,finished_event))
@@ -47,7 +47,7 @@ def AutoCloseMessageBoxW(text, title, close_until_seconds, handle=None):
         t2.join()
     return
         
-def warningMessage(quickness , closeType,  hwnd=None, ):
+def warning_message(quickness , closeType,  hwnd=None, ):
     seconds = quickness
     seconds = seconds % (24 * 3600)
     hour = seconds // 3600
@@ -59,9 +59,9 @@ def warningMessage(quickness , closeType,  hwnd=None, ):
     message=f"{timeLeft} until Break is over, please close the window and return to work"
     if hwnd:
         message = f"{timeLeft} left until window is closed {new_line} please Save your progress and exit the window"
-        AutoCloseMessageBoxW(message, "AlertMessage", 5, hwnd)
+        auto_close_message_box_window(message, "AlertMessage", 5, hwnd)
     else:
         print("no hwnd")
-        AutoCloseMessageBoxW(message, "AlertMessage", 5)
+        auto_close_message_box_window(message, "AlertMessage", 5)
  
  

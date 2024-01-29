@@ -1,5 +1,5 @@
 from .components import timer_selector, create_new_window, create_button
-from utils.JsonManipulators import addBreak
+from utils.json_manipulators import addBreak
 from .component_utils import CountDownTimer
 # creating a class to store the state of the CountDownTimer
 

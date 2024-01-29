@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-def ReadJSON(fileName):
+def read_json(fileName):
     file_path = os.path.join("jsonFiles", fileName)
     absolute_file_path = os.path.abspath(file_path)
 
@@ -10,7 +10,7 @@ def ReadJSON(fileName):
     else:
         with open(absolute_file_path, 'r') as file:
             return json.load(file)
-def writeJson(fileName, data):
+def write_json(fileName, data):
     file_path = os.path.join("jsonFiles", fileName)
     absolute_file_path = os.path.abspath(file_path) 
     with open(file_path, 'w') as file:
@@ -18,56 +18,56 @@ def writeJson(fileName, data):
     return
 
 
-def ReadPDFs():
-    return ReadJSON('PDFs.json')
-def ReadBlackList():
-    return ReadJSON('blackList.json')
-def ReadSchedule():
-    return ReadJSON('scheduler.json')
+def read_PDFs():
+    return read_json('PDFs.json')
+def read_blacklist():
+    return read_json('blackList.json')
+def read_schedule():
+    return read_json('scheduler.json')
 
-def removeBreak(schedule):
+def remove_break(schedule):
     # set schedule[break] to 0 and write to file
     schedule["break"] = 0
-    writeJson('scheduler.json', schedule)
+    write_json('scheduler.json', schedule)
 
-def removeDayOff(schedule):
+def remove_day_off(schedule):
     # set schedule[break] to 0 and write to file
     today = datetime.now().strftime("%m/%d/%Y")
     schedule["DaysOff"].remove(today)
-    writeJson('scheduler.json', schedule)
+    write_json('scheduler.json', schedule)
 
-def isBreak():
-    Schedule = ReadSchedule()
-    breakLeft = Schedule["break"]
-    return breakLeft!=0
-def addBreak(seconds):
-    schedule = ReadSchedule()
+def is_break():
+    Schedule = read_schedule()
+    break_left = Schedule["break"]
+    return break_left!=0
+def add_break(seconds):
+    schedule = read_schedule()
     schedule["break"] = seconds
-    writeJson('scheduler.json', schedule)
+    write_json('scheduler.json', schedule)
     return
-def fixPdfs():
-    pdfs = ReadPDFs()
+def fix_pdfs():
+    pdfs = read_PDFs()
     new=[]
     for pdf in pdfs:
         print(pdf)
         pdf = pdf[:-4]
         new.append(pdf)
         print (pdf)
-    writeJson('PDFs.json', new)
+    write_json('PDFs.json', new)
     return
 
 def getList(patharr):
-    data = ReadJSON(patharr[0])
+    data = read_json(patharr[0])
     for index, item in enumerate(patharr, start=1):
         data = data[item]
     return data
 
 # def setList(data, patharr, value):
-#     data = ReadJSON(patharr[0])
+#     data = read_json(patharr[0])
 #     for index, item in enumerate(patharr, start=1):
 #         if index == len(patharr):
 #             data[item] = value
-#             writeJson(patharr[0], data)
+#             writejson(patharr[0], data)
 #             return
 #         data = data[item]
 #     return
