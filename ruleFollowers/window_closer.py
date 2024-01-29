@@ -1,12 +1,12 @@
 from datetime import datetime,timedelta
 import time 
-from .create_message import warningMessage
+from .create_message import warning_message
 from .exe_blocker import kill
 from .window_data_finders import get_foreground_window_pid, get_foregroud_window_path, get_foreground_window_title, get_explorer_path, get_hwnd,get_chrome_adress
 from utils.json_manipulators import read_blacklist, read_schedule, remove_break, remove_day_off, is_break,getList
 
 def warn_kill(kill_time, kill_type, hwnd, pid = None):
-        warningMessage(kill_time, kill_type, hwnd)
+        warning_message(kill_time, kill_type, hwnd)
         time.sleep(kill_time-5)
         if get_hwnd() != hwnd:
             return

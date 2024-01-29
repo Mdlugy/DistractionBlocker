@@ -1,8 +1,8 @@
 from guizero import App, Text, PushButton, Box
 import time
 from datetime import datetime
-from ruleFollowers.windowCloser import windowCloser
-from utils.json_manipulators import ReadSchedule, addBreak
+from ruleFollowers.window_closer import window_closer
+from utils.json_manipulators import read_schedule, add_break
 from .components import  header_box,create_time_box
 from .component_utils import DisableButton, Run_Stop, TimeBox, control_threads
 from .add_a_break_window import create_break_Window
@@ -10,12 +10,12 @@ from .add_settings_window import add_settings_window
 import threading
 
 def get_static_time():
-    schedule = ReadSchedule()
+    schedule = read_schedule()
     weekday = datetime.now().strftime("%A")
     return schedule[weekday]['end']
 
 def get_break_left():
-    schedule = ReadSchedule()
+    schedule = read_schedule()
     break_left = schedule['break']
     return break_left
 
@@ -40,7 +40,7 @@ control_threads_instance = control_threads()
 app = App(title="Distraction Blocker", layout="auto", bg='lightblue')
 run_stop = Run_Stop()
 
-window_closer_thread = threading.Thread(target=lambda:windowCloser(control_threads_instance),daemon=True)
+window_closer_thread = threading.Thread(target=lambda:window_closer(control_threads_instance),daemon=True)
 window_closer_thread.start()
 run_stop.addProcess(window_closer_thread)
 app.when_closed = close
