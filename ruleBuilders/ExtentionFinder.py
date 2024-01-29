@@ -1,6 +1,6 @@
 import os
 import fnmatch
-from ruleFollowers.JsonManipulators import read_JSON, write_Json
+from utils.json_manipulators import read_JSON, write_Json
 def find_extensions_in_dir(directory, extensions):
     for extension in extensions:
         print(extension)
