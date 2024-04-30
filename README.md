@@ -1,14 +1,17 @@
 # DistractionBlocker
+ONLY TESTED ON WINDOWS 10
+
 A program that runs off a GUI which allows the user to create a blacklist and a timer, then block all of the folders and Executables within those folders while the timer runs. 
 
 before running, please run pip install -r requirements.txt in your terminal to install all the necessary dependencies.
 
-to run, either run main.py in your terminal or, if you've installed WSL you can simply doubleclick the distractionblocker.bat file. 
+to run, either run main.py in your terminal or you can simply doubleclick the distractionblocker.bat file. 
 
 HOW TO USE
 Schedule Setup
 you can either edit the JSON file directly, or edit the schedule in the GUI. If you are editing the JSON file please ensure that you are following ("HH:MM:SS") format for start and end times. If you'd like to add days off, please add them in ("01/01/2024") format, comma separated. e.g:["01/01/2024","01/02/2024"]
     
+![Main](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/b1c4a6ea-e7bd-4613-a3e9-7fe36300179c)
 
 BlackList Setup
 (Doing this through the Gui is not yet supported, this is the next planned feature. For now, please set this up through the blackList.json file.)
@@ -24,7 +27,7 @@ BlackList Setup
         FolderPaths:
             functionally the same as paths, but this list is used for checking which folder is currently open in windows explorer. you can use this list for blocking off windows explorer folders. (same format as path.)
         Urls:
-            If you'd like to extend this project to also block certain websites you can include a list of Urls here. As of now, only chrome is supported with this functionality as it exposes this data in a consistent way. You can either include a whole website e.g. "youtube.com", or specific URls e.g. "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+            If you'd like to extend this project to also block certain websites you can include a list of URLs here. As of now, only Chrome is supported with this functionality as it consistently exposes browsing data. You can either include a whole website e.g. "youtube.com", or specific URls e.g. "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
         SpecialCases:
             This is a somewhat more complicated category. This is a list of objects with the following properties:
                 Label: {string}
@@ -49,7 +52,7 @@ BlackList Setup
                     e.g. ["blackList.json","Urls"] (this will use the Urls list). or e.g.[youtube.com, twitch.tv, facebook.com....]
 
                 BlockTarget:"title","explorerPath", "path" or "URL"
-                    this is the attribute of the currently opened window that we're testing the special case Blacklist/whitelist against to decide wether we close or allow the window to stay open. it is worth running watch_processes.py to decide which target to use. 
+                    this is the attribute of the currently opened window that we're testing the special case Blacklist/whitelist against to decide whether we close or allow the window to stay open. it is worth running watch_processes.py to decide which target to use. 
 
             I've included my specialCases portion as an example:
                 "SpecialCases":[
@@ -86,8 +89,12 @@ either run main.py in the terminal or click on main.bat
 
 Breaks
 to take a break click the "add a break" button and set how long of a break you'd like to take, then click submit. 5 minutes before the break ends, if you are running a blocked program a popup window will show up that warns you that a break will end in 5 minutes, at which time that window will be closed by the program. 
+![Break default](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/84f18d8e-03a9-4ac1-b9fd-ef28a6ca98e9)
+![Main with Break left](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/f9cf1dec-d7b0-4c22-8c82-29c3e082fa8c)
 
 
 Days Off
 the program is setup to run every day with schedules set by days of the week. If you'd like to keep the program running in the background, but have it be inactive, please add the date you'd like it to turn off either through the gui or by editing the scheduler.json. 
+![days off](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/69c60132-286f-46c8-859d-dc6ba9eb7173)
+![schedule settings with day](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/7630b5ab-12a5-4d64-b1ac-fbda551dd10a)
 
