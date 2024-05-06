@@ -98,3 +98,10 @@ the program is setup to run every day with schedules set by days of the week. If
 ![days off](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/69c60132-286f-46c8-859d-dc6ba9eb7173)
 ![schedule settings with day](https://github.com/Mdlugy/DistractionBlocker/assets/76677996/7630b5ab-12a5-4d64-b1ac-fbda551dd10a)
 
+
+Future Plans: 
+    1. rebuild Gui with EEL to allow for easier modifications with an HTML/CSS/JS based system
+    2. extend core scripts to make active processes available to gui
+    3. Extend GUI to show active processes in GUI. 
+    4. extend gui to include blacklist management.
+    
